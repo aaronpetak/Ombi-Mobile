@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "family.petak.ombi"
+    namespace = "com.ombi.mobile"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "family.petak.ombi"
+        applicationId = "com.ombi.mobile"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
