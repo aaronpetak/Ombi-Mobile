@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ombi Mobile is a native Android app (Kotlin + Jetpack Compose) that serves as a mobile frontend for [Ombi](https://github.com/Ombi-app/Ombi), a self-hosted media request manager. It communicates exclusively with the Ombi REST API — no direct database access.
 
-- **Package:** `family.petak.ombi`
+- **Package:** `com.ombi.mobile`
 - **Min SDK:** 29 (Android 10) — all devices support adaptive icons and full Material You
 - **Target SDK:** 35
 - **Default branch:** `develop` → PRs target `main`
@@ -28,7 +28,7 @@ From the command line (after Android Studio has synced once):
 ./gradlew :app:testDebugUnitTest
 
 # Run a single test class
-./gradlew :app:testDebugUnitTest --tests "family.petak.ombi.SomeTest"
+./gradlew :app:testDebugUnitTest --tests "com.ombi.mobile.SomeTest"
 
 # Lint
 ./gradlew :app:lint

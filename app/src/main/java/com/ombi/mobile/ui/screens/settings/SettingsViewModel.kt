@@ -1,0 +1,56 @@
+package com.ombi.mobile.ui.screens.settings
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import com.ombi.mobile.data.preferences.UserPreferences
+import com.ombi.mobile.data.repository.AuthRepository
+import com.ombi.mobile.data.repository.OmbiRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class SettingsUiState(
+    val serverUrl: String = "",
+    val username: String? = null,
+    val theme: String = "system",
+    val isLoading: Boolean = false
+)
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val userPreferences: UserPreferences,
+    private val authRepository: AuthRepository,
+    private val ombiRepository: OmbiRepository
+) : ViewModel() {
+
+    val uiState: StateFlow<SettingsUiState> = combine(
+        userPreferences.serverUrl,
+        userPreferences.theme
+    ) { url, theme ->
+        SettingsUiState(
+            serverUrl = url,
+            username = authRepository.username,
+            theme = theme
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    init {
+        // Load display name from API
+        viewModelScope.launch {
+            ombiRepository.getCurrentUser().onSuccess { user ->
+                // username is already stored in AuthManager from login; no additional update needed
+                // If we want to show display name, it's available as user.displayName
+            }
+        }
+    }
+
+    fun setTheme(theme: String) {
+        viewModelScope.launch { userPreferences.setTheme(theme) }
+    }
+
+    fun logout(onLogout: () -> Unit) {
+        authRepository.logout()
+        onLogout()
+    }
+}
