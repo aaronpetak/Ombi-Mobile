@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.ombi.mobile.data.api.models.MultiSearchResult
 import com.ombi.mobile.data.repository.OmbiRepository
+import com.ombi.mobile.ui.model.MediaItem
+import com.ombi.mobile.ui.model.toMediaItem
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,7 +19,10 @@ data class SearchUiState(
     val results: List<MultiSearchResult> = emptyList(),
     val filter: SearchFilter = SearchFilter.ALL,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val selectedItem: MediaItem? = null,
+    val isRequesting: Boolean = false,
+    val requestMessage: String? = null
 ) {
     val filteredResults: List<MultiSearchResult> get() = when (filter) {
         SearchFilter.ALL -> results
@@ -35,7 +40,6 @@ class SearchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
-    // Debounce search input to avoid firing on every keystroke
     private val queryFlow = MutableStateFlow("")
 
     init {
@@ -60,32 +64,45 @@ class SearchViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(filter = filter)
     }
 
-    fun requestMovie(movieDbId: Int) {
-        viewModelScope.launch {
-            repository.requestMovie(movieDbId)
-                .onSuccess {
-                    // Optimistically mark as requested in the results list
-                    _uiState.value = _uiState.value.copy(
-                        results = _uiState.value.results.map { result ->
-                            if (result.theMovieDbId == movieDbId) result.copy(requested = true) else result
-                        }
-                    )
-                }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
-        }
+    fun selectItem(item: MediaItem?) {
+        _uiState.value = _uiState.value.copy(selectedItem = item, requestMessage = null)
     }
 
-    fun requestTv(tvDbId: Int) {
+    fun requestSelected() {
+        val item = _uiState.value.selectedItem ?: return
         viewModelScope.launch {
-            repository.requestTv(tvDbId, requestAll = true)
-                .onSuccess {
+            _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
+            val result = if (item.isMovie) {
+                item.theMovieDbId?.let { repository.requestMovie(it) }
+            } else {
+                item.tvDbId?.let { repository.requestTv(it) }
+            }
+            result?.fold(
+                onSuccess = { engineResult ->
+                    val msg = if (engineResult.result) "Request submitted!" else "Failed: ${engineResult.errorMessage}"
                     _uiState.value = _uiState.value.copy(
-                        results = _uiState.value.results.map { result ->
-                            if (result.tvDbId == tvDbId) result.copy(requested = true) else result
-                        }
+                        isRequesting = false,
+                        requestMessage = msg,
+                        selectedItem = if (engineResult.result) item.copy(requested = true) else item,
+                        // Refresh status badge in the grid
+                        results = if (engineResult.result) {
+                            _uiState.value.results.map { r ->
+                                if ((item.isMovie && r.theMovieDbId == item.theMovieDbId) ||
+                                    (!item.isMovie && r.tvDbId == item.tvDbId)
+                                ) r.copy(requested = true) else r
+                            }
+                        } else _uiState.value.results
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(
+                        isRequesting = false,
+                        requestMessage = "Error: ${it.message}"
                     )
                 }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
+            ) ?: run {
+                _uiState.value = _uiState.value.copy(isRequesting = false, requestMessage = "Missing ID for request")
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 package com.ombi.mobile.ui.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,11 +19,16 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 /**
- * Poster card used throughout Home, Search, and Requests screens.
- *
- * @param posterUrl  Full URL for the poster image (Ombi returns relative paths — callers must
- *                   prepend the TMDB image base URL, e.g. https://image.tmdb.org/t/p/w342)
+ * Builds a full TMDB image URL from a relative poster path returned by Ombi.
+ * Handles null, already-full URLs, and paths missing the leading '/'.
  */
+fun String?.toTmdbUrl(size: String = "w342"): String? {
+    if (isNullOrBlank()) return null
+    if (startsWith("http")) return this
+    val path = if (startsWith("/")) this else "/$this"
+    return "https://image.tmdb.org/t/p/$size$path"
+}
+
 @Composable
 fun MediaCard(
     title: String?,
@@ -69,7 +76,7 @@ fun MediaCard(
     }
 }
 
-/** Horizontal scrollable row of [MediaCard]s with a section header. */
+/** Labelled horizontally-scrollable row of [MediaCard]s. */
 @Composable
 fun MediaRow(
     title: String,
@@ -86,7 +93,8 @@ fun MediaRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             content = content
         )
     }
