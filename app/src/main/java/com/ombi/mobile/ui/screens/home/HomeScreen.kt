@@ -1,9 +1,8 @@
 package com.ombi.mobile.ui.screens.home
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -13,8 +12,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ombi.mobile.ui.components.MediaCard
 import com.ombi.mobile.ui.components.MediaRow
-
-private const val TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342"
+import com.ombi.mobile.ui.components.toTmdbUrl
+import com.ombi.mobile.ui.model.*
+import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,10 +44,11 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.recentMovies.isNotEmpty()) {
                     MediaRow(title = "Recently Added Movies") {
-                        uiState.recentMovies.take(10).forEach { movie ->
+                        uiState.recentMovies.take(20).forEach { movie ->
                             MediaCard(
                                 title = movie.title,
-                                posterUrl = movie.posterPath?.let { TMDB_IMAGE_BASE + it }
+                                posterUrl = movie.posterPath.toTmdbUrl(),
+                                onClick = { viewModel.selectItem(movie.toMediaItem()) }
                             )
                         }
                     }
@@ -56,10 +57,11 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.recentTv.isNotEmpty()) {
                     MediaRow(title = "Recently Added TV") {
-                        uiState.recentTv.take(10).forEach { tv ->
+                        uiState.recentTv.take(20).forEach { tv ->
                             MediaCard(
                                 title = tv.title,
-                                posterUrl = tv.posterPath?.let { TMDB_IMAGE_BASE + it }
+                                posterUrl = tv.posterPath.toTmdbUrl(),
+                                onClick = { viewModel.selectItem(tv.toMediaItem()) }
                             )
                         }
                     }
@@ -68,10 +70,11 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.popularMovies.isNotEmpty()) {
                     MediaRow(title = "Popular Movies") {
-                        uiState.popularMovies.take(10).forEach { movie ->
+                        uiState.popularMovies.take(20).forEach { movie ->
                             MediaCard(
                                 title = movie.title,
-                                posterUrl = movie.poster?.let { TMDB_IMAGE_BASE + it }
+                                posterUrl = movie.poster.toTmdbUrl(),
+                                onClick = { viewModel.selectItem(movie.toMediaItem()) }
                             )
                         }
                     }
@@ -80,10 +83,11 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.trendingTv.isNotEmpty()) {
                     MediaRow(title = "Trending TV") {
-                        uiState.trendingTv.take(10).forEach { tv ->
+                        uiState.trendingTv.take(20).forEach { tv ->
                             MediaCard(
                                 title = tv.title,
-                                posterUrl = tv.poster?.let { TMDB_IMAGE_BASE + it }
+                                posterUrl = tv.poster.toTmdbUrl(),
+                                onClick = { viewModel.selectItem(tv.toMediaItem()) }
                             )
                         }
                     }
@@ -92,24 +96,36 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.upcomingMovies.isNotEmpty()) {
                     MediaRow(title = "Upcoming Movies") {
-                        uiState.upcomingMovies.take(10).forEach { movie ->
+                        uiState.upcomingMovies.take(20).forEach { movie ->
                             MediaCard(
                                 title = movie.title,
-                                posterUrl = movie.poster?.let { TMDB_IMAGE_BASE + it }
+                                posterUrl = movie.poster.toTmdbUrl(),
+                                onClick = { viewModel.selectItem(movie.toMediaItem()) }
                             )
                         }
                     }
                     Spacer(Modifier.height(16.dp))
                 }
 
-                if (uiState.error != null) {
+                uiState.error?.let {
                     Text(
-                        text = uiState.error!!,
+                        text = it,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp)
                     )
                 }
             }
         }
+    }
+
+    // Detail bottom sheet
+    uiState.selectedItem?.let { item ->
+        MediaDetailSheet(
+            item = item,
+            onDismiss = { viewModel.selectItem(null) },
+            onRequest = viewModel::requestSelected,
+            isRequesting = uiState.isRequesting,
+            requestMessage = uiState.requestMessage
+        )
     }
 }

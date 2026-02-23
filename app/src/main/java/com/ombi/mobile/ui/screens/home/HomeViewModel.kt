@@ -8,6 +8,7 @@ import com.ombi.mobile.data.api.models.RecentlyAddedTv
 import com.ombi.mobile.data.api.models.SearchMovieViewModel
 import com.ombi.mobile.data.api.models.SearchTvShowViewModel
 import com.ombi.mobile.data.repository.OmbiRepository
+import com.ombi.mobile.ui.model.MediaItem
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,10 @@ data class HomeUiState(
     val trendingTv: List<SearchTvShowViewModel> = emptyList(),
     val upcomingMovies: List<SearchMovieViewModel> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val selectedItem: MediaItem? = null,
+    val isRequesting: Boolean = false,
+    val requestMessage: String? = null
 )
 
 @HiltViewModel
@@ -47,7 +51,7 @@ class HomeViewModel @Inject constructor(
             val trendingTv = async { repository.getTrendingTv() }
             val upcomingMovies = async { repository.getUpcomingMovies() }
 
-            _uiState.value = HomeUiState(
+            _uiState.value = _uiState.value.copy(
                 recentMovies = recentMovies.await().getOrDefault(emptyList()),
                 recentTv = recentTv.await().getOrDefault(emptyList()),
                 popularMovies = popularMovies.await().getOrDefault(emptyList()),
@@ -55,6 +59,40 @@ class HomeViewModel @Inject constructor(
                 upcomingMovies = upcomingMovies.await().getOrDefault(emptyList()),
                 isLoading = false
             )
+        }
+    }
+
+    fun selectItem(item: MediaItem?) {
+        _uiState.value = _uiState.value.copy(selectedItem = item, requestMessage = null)
+    }
+
+    fun requestSelected() {
+        val item = _uiState.value.selectedItem ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
+            val result = if (item.isMovie) {
+                item.theMovieDbId?.let { repository.requestMovie(it) }
+            } else {
+                item.tvDbId?.let { repository.requestTv(it) }
+            }
+            result?.fold(
+                onSuccess = { engineResult ->
+                    val msg = if (engineResult.result) "Request submitted!" else "Failed: ${engineResult.errorMessage}"
+                    _uiState.value = _uiState.value.copy(
+                        isRequesting = false,
+                        requestMessage = msg,
+                        selectedItem = if (engineResult.result) item.copy(requested = true) else item
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(
+                        isRequesting = false,
+                        requestMessage = "Error: ${it.message}"
+                    )
+                }
+            ) ?: run {
+                _uiState.value = _uiState.value.copy(isRequesting = false, requestMessage = "Missing ID for request")
+            }
         }
     }
 }

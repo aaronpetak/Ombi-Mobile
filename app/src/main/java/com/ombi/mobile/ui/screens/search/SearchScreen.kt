@@ -16,28 +16,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ombi.mobile.ui.components.MediaCard
 import com.ombi.mobile.ui.components.StatusBadge
 import com.ombi.mobile.ui.components.mediaStatusFrom
-
-private const val TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342"
+import com.ombi.mobile.ui.components.toTmdbUrl
+import com.ombi.mobile.ui.model.toMediaItem
+import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
 
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Search bar
         SearchBar(
             query = uiState.query,
             onQueryChange = viewModel::onQueryChange,
             isLoading = uiState.isLoading
         )
 
-        // Filter chips
         FilterRow(
             selected = uiState.filter,
             onSelect = viewModel::onFilterChange
         )
 
-        // Results
         when {
             uiState.query.length < 2 -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -63,17 +61,9 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                         val status = mediaStatusFrom(result.available, result.requested, result.approved, null)
                         MediaCard(
                             title = result.title,
-                            posterUrl = result.poster?.let { TMDB_IMAGE_BASE + it },
+                            posterUrl = result.poster.toTmdbUrl(),
                             statusBadge = { StatusBadge(status) },
-                            onClick = {
-                                if (!result.requested && !result.available) {
-                                    if (result.isMovie) {
-                                        result.theMovieDbId?.let { viewModel.requestMovie(it) }
-                                    } else {
-                                        result.tvDbId?.let { viewModel.requestTv(it) }
-                                    }
-                                }
-                            }
+                            onClick = { viewModel.selectItem(result.toMediaItem()) }
                         )
                     }
                 }
@@ -83,6 +73,17 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
         uiState.error?.let {
             Snackbar(modifier = Modifier.padding(8.dp)) { Text(it) }
         }
+    }
+
+    // Detail bottom sheet
+    uiState.selectedItem?.let { item ->
+        MediaDetailSheet(
+            item = item,
+            onDismiss = { viewModel.selectItem(null) },
+            onRequest = viewModel::requestSelected,
+            isRequesting = uiState.isRequesting,
+            requestMessage = uiState.requestMessage
+        )
     }
 }
 

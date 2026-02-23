@@ -21,7 +21,7 @@ interface OmbiApiService {
 
     // ── Search (V2) ───────────────────────────────────────────────────────────
 
-    @GET("api/v2/search/multi/{searchTerm}")
+    @POST("api/v2/search/multi/{searchTerm}")
     suspend fun multiSearch(@Path("searchTerm") searchTerm: String): Response<List<MultiSearchResult>>
 
     // ── Discover — Movies ─────────────────────────────────────────────────────
