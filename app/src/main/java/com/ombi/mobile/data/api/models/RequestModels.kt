@@ -7,16 +7,18 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class MovieRequestBody(
-    @Json(name = "theMovieDbId") val theMovieDbId: Int
+    @Json(name = "theMovieDbId") val theMovieDbId: Int,
+    @Json(name = "languageCode") val languageCode: String = "en"
 )
 
 @JsonClass(generateAdapter = true)
 data class TvRequestBody(
-    @Json(name = "tvDbId") val tvDbId: Int,
+    @Json(name = "theMovieDbId") val theMovieDbId: Int,
     @Json(name = "requestAll") val requestAll: Boolean = false,
     @Json(name = "firstSeason") val firstSeason: Boolean = false,
     @Json(name = "latestSeason") val latestSeason: Boolean = false,
-    @Json(name = "seasons") val seasons: List<SeasonRequestBody> = emptyList()
+    @Json(name = "seasons") val seasons: List<SeasonRequestBody> = emptyList(),
+    @Json(name = "languageCode") val languageCode: String = "en"
 )
 
 @JsonClass(generateAdapter = true)

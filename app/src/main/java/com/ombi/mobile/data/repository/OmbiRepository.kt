@@ -73,8 +73,8 @@ class OmbiRepository @Inject constructor(
 
     // ── TV Requests ───────────────────────────────────────────────────────────
 
-    suspend fun requestTv(tvDbId: Int, requestAll: Boolean = true): Result<RequestEngineResult> = runCatching {
-        api.requestTv(TvRequestBody(tvDbId = tvDbId, requestAll = requestAll)).requireBody()
+    suspend fun requestTv(theMovieDbId: Int, requestAll: Boolean = true): Result<RequestEngineResult> = runCatching {
+        api.requestTv(TvRequestBody(theMovieDbId = theMovieDbId, requestAll = requestAll)).requireBody()
     }
 
     suspend fun getTvRequests(count: Int = 30, position: Int = 0): Result<RequestsViewModel<TvRequest>> = runCatching {
