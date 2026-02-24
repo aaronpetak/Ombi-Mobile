@@ -53,19 +53,7 @@ interface OmbiApiService {
         @Path("count") count: Int
     ): Response<List<SearchMovieViewModel>>
 
-    @GET("api/v2/search/movie/nowplaying/{position}/{count}")
-    suspend fun getNowPlayingMovies(
-        @Path("position") position: Int,
-        @Path("count") count: Int
-    ): Response<List<SearchMovieViewModel>>
-
     // ── Discover — TV ─────────────────────────────────────────────────────────
-
-    @GET("api/v2/search/tv/popular/{position}/{count}")
-    suspend fun getPopularTv(
-        @Path("position") position: Int,
-        @Path("count") count: Int
-    ): Response<List<SearchTvShowViewModel>>
 
     @GET("api/v2/search/tv/trending/{position}/{count}")
     suspend fun getTrendingTv(

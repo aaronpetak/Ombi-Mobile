@@ -12,6 +12,4 @@ data class UserViewModel(
     // 1 = LocalUser, 2 = PlexUser, 3 = EmbyUser
     @Json(name = "userType") val userType: Int,
     @Json(name = "hasLoggedIn") val hasLoggedIn: Boolean
-) {
-    val displayName: String get() = alias?.takeIf { it.isNotBlank() } ?: userName
-}
+)

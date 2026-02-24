@@ -47,12 +47,4 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun loginWithPlexToken(token: String, onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            authRepository.loginWithPlexToken(token)
-                .onSuccess { onSuccess() }
-                .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
-        }
-    }
 }

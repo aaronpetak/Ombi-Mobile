@@ -16,7 +16,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.ombi.mobile.data.api.models.MovieRequest
 import com.ombi.mobile.data.api.models.TvRequest
 import com.ombi.mobile.ui.components.toTmdbUrl
 
@@ -50,12 +49,13 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     selected = uiState.selectedStatus == status,
                     onClick = { viewModel.onStatusSelected(status) },
                     text = {
-                        val label = if (status == StatusTab.PENDING) "Pending" else "Processed"
-                        val count = when {
-                            status == StatusTab.PENDING && uiState.selectedTab == RequestTab.MOVIES -> uiState.pendingMovies.size
-                            status == StatusTab.PROCESSED && uiState.selectedTab == RequestTab.MOVIES -> uiState.processedMovies.size
-                            status == StatusTab.PENDING -> uiState.pendingTv.size
-                            else -> uiState.processedTv.size
+                        val label = when (status) {
+                            StatusTab.PENDING -> "Pending"
+                            StatusTab.PROCESSED -> "Processed"
+                        }
+                        val count = when (status) {
+                            StatusTab.PENDING -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.pendingMovies.size else uiState.pendingTv.size
+                            StatusTab.PROCESSED -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.processedMovies.size else uiState.processedTv.size
                         }
                         Text("$label ($count)")
                     }
