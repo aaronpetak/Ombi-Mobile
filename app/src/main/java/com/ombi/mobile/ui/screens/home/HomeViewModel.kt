@@ -73,7 +73,11 @@ class HomeViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                item.theMovieDbId?.let { repository.requestTv(it) }
+                // theMovieDbId is required for V2 TV requests; discover endpoints may only
+                // populate tvDbId, so resolve the TMDB ID via a TVDB lookup if needed
+                val tmdbId = item.theMovieDbId
+                    ?: item.tvDbId?.let { repository.getTvByTvDbId(it).getOrNull()?.theMovieDbId }
+                tmdbId?.let { repository.requestTv(it) }
             }
             result?.fold(
                 onSuccess = { engineResult ->

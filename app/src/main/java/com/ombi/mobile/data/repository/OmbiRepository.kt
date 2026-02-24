@@ -24,6 +24,10 @@ class OmbiRepository @Inject constructor(
         api.getTvByMovieDbId(tmdbId).requireBody()
     }
 
+    suspend fun getTvByTvDbId(tvDbId: Int): Result<SearchTvShowViewModel> = runCatching {
+        api.getTvByTvDbId(tvDbId).requireBody()
+    }
+
     // ── Discover ──────────────────────────────────────────────────────────────
 
     suspend fun getPopularMovies(position: Int = 0, count: Int = 20): Result<List<SearchMovieViewModel>> = runCatching {
