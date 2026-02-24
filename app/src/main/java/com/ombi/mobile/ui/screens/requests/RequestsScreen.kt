@@ -18,8 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ombi.mobile.data.api.models.MovieRequest
 import com.ombi.mobile.data.api.models.TvRequest
-
-private const val TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w92"
+import com.ombi.mobile.ui.components.toTmdbUrl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,7 +163,7 @@ private fun RequestListItem(
         },
         leadingContent = {
             AsyncImage(
-                model = posterPath?.let { TMDB_IMAGE_BASE + it },
+                model = posterPath.toTmdbUrl("w92"),
                 contentDescription = title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
