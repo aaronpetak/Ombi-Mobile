@@ -23,7 +23,7 @@ data class MediaItem(
 
 fun SearchMovieViewModel.toMediaItem() = MediaItem(
     title = title ?: "",
-    posterPath = poster,
+    posterPath = posterPath,
     overview = overview,
     year = releaseDate?.take(4),
     rating = voteAverage,
@@ -37,7 +37,7 @@ fun SearchMovieViewModel.toMediaItem() = MediaItem(
 
 fun SearchTvShowViewModel.toMediaItem() = MediaItem(
     title = title ?: "",
-    posterPath = poster,
+    posterPath = banner,
     overview = overview,
     year = firstAired?.take(4),
     rating = rating,

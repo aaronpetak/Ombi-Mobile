@@ -73,7 +73,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                         uiState.popularMovies.take(20).forEach { movie ->
                             MediaCard(
                                 title = movie.title,
-                                posterUrl = movie.poster.toTmdbUrl(),
+                                posterUrl = movie.posterPath.toTmdbUrl(),
                                 onClick = { viewModel.selectItem(movie.toMediaItem()) }
                             )
                         }
@@ -86,7 +86,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                         uiState.trendingTv.take(20).forEach { tv ->
                             MediaCard(
                                 title = tv.title,
-                                posterUrl = tv.poster.toTmdbUrl(),
+                                posterUrl = tv.banner.toTmdbUrl(),
                                 onClick = { viewModel.selectItem(tv.toMediaItem()) }
                             )
                         }
@@ -99,7 +99,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                         uiState.upcomingMovies.take(20).forEach { movie ->
                             MediaCard(
                                 title = movie.title,
-                                posterUrl = movie.poster.toTmdbUrl(),
+                                posterUrl = movie.posterPath.toTmdbUrl(),
                                 onClick = { viewModel.selectItem(movie.toMediaItem()) }
                             )
                         }
