@@ -86,8 +86,8 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     emptyMessage = if (canCancel) "No pending TV requests" else "No completed TV requests",
                     items = uiState.visibleTv,
                     key = { it.id },
-                    title = { it.title ?: "Unknown" },
-                    posterPath = { it.posterPath ?: it.background },
+                    title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
+                    posterPath = { it.posterPath },
                     statusLabel = { tvStatusLabel(it) },
                     canCancel = canCancel,
                     onCancel = { viewModel.cancelTvRequest(it.id) }
@@ -100,7 +100,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
 private fun tvStatusLabel(request: TvRequest): String = when {
     request.available -> "Available"
     request.denied == true -> "Denied"
-    request.childRequests?.any { it.approved } == true -> "Processing"
+    request.approved -> "Processing"
     else -> "Pending"
 }
 

@@ -71,29 +71,34 @@ data class MovieRequest(
     }
 }
 
+/**
+ * Maps a ChildRequests item from GET /api/v2/requests/tv.
+ * The endpoint returns ChildRequests (season-level), not the parent TvRequests.
+ * Image fields (posterPath, background) live on the nested parentRequest object.
+ */
 @JsonClass(generateAdapter = true)
 data class TvRequest(
     @Json(name = "id") val id: Int,
     @Json(name = "title") val title: String?,
-    @Json(name = "posterPath") val posterPath: String?,
-    @Json(name = "background") val background: String?,
-    @Json(name = "overview") val overview: String?,
     @Json(name = "approved") val approved: Boolean,
     @Json(name = "denied") val denied: Boolean?,
     @Json(name = "available") val available: Boolean,
     @Json(name = "deniedReason") val deniedReason: String?,
     @Json(name = "requestedDate") val requestedDate: String?,
     @Json(name = "requestedUser") val requestedUser: RequestedUser?,
-    @Json(name = "childRequests") val childRequests: List<ChildRequest>?
-)
+    @Json(name = "seasonRequests") val seasonRequests: List<SeasonViewModel>?,
+    @Json(name = "parentRequest") val parentRequest: TvParentRequest?
+) {
+    val posterPath: String? get() = parentRequest?.posterPath ?: parentRequest?.background
+}
 
 @JsonClass(generateAdapter = true)
-data class ChildRequest(
+data class TvParentRequest(
     @Json(name = "id") val id: Int,
-    @Json(name = "approved") val approved: Boolean,
-    @Json(name = "denied") val denied: Boolean?,
-    @Json(name = "available") val available: Boolean,
-    @Json(name = "seasonRequests") val seasonRequests: List<SeasonViewModel>?
+    @Json(name = "title") val title: String?,
+    @Json(name = "posterPath") val posterPath: String?,
+    @Json(name = "background") val background: String?,
+    @Json(name = "tvDbId") val tvDbId: Int?
 )
 
 @JsonClass(generateAdapter = true)
