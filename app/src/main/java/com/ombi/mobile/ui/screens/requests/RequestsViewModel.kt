@@ -22,7 +22,8 @@ data class RequestsUiState(
     val selectedTab: RequestTab = RequestTab.MOVIES,
     val selectedStatus: StatusTab = StatusTab.PENDING,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isAdmin: Boolean = false
 ) {
     // Pending = not yet available and not denied
     val pendingMovies: List<MovieRequest> get() = movieRequests.filter { !it.available && it.denied != true }
@@ -53,6 +54,7 @@ class RequestsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val movies = async { repository.getMovieRequests() }
             val tv = async { repository.getTvRequests() }
+            val user = async { repository.getCurrentUser() }
             _uiState.value = _uiState.value.copy(
                 movieRequests = movies.await().getOrDefault(
                     com.ombi.mobile.data.api.models.RequestsViewModel(emptyList(), 0)
@@ -60,6 +62,7 @@ class RequestsViewModel @Inject constructor(
                 tvRequests = tv.await().getOrDefault(
                     com.ombi.mobile.data.api.models.RequestsViewModel(emptyList(), 0)
                 ).collection,
+                isAdmin = user.await().getOrNull()?.isAdmin ?: false,
                 isLoading = false
             )
         }
@@ -85,12 +88,12 @@ class RequestsViewModel @Inject constructor(
         }
     }
 
-    fun cancelTvRequest(requestId: Int) {
+    fun cancelTvRequest(parentRequestId: Int) {
         viewModelScope.launch {
-            repository.cancelTvRequest(requestId)
+            repository.cancelTvRequest(parentRequestId)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
-                        tvRequests = _uiState.value.tvRequests.filter { it.id != requestId }
+                        tvRequests = _uiState.value.tvRequests.filter { it.parentRequest?.id != parentRequestId }
                     )
                 }
                 .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
