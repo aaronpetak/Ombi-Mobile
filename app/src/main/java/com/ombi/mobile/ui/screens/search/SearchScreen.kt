@@ -71,13 +71,13 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
         }
     }
 
-    // Detail bottom sheet
+    // Detail bottom sheet — sheet opens immediately; status is enriched in the background
     uiState.selectedItem?.let { item ->
         MediaDetailSheet(
             item = item,
             onDismiss = { viewModel.selectItem(null) },
             onRequest = viewModel::requestSelected,
-            isRequesting = uiState.isRequesting,
+            isRequesting = uiState.isRequesting || uiState.isStatusLoading,
             requestMessage = uiState.requestMessage
         )
     }

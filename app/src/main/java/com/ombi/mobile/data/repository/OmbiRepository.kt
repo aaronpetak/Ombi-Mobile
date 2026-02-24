@@ -15,6 +15,10 @@ class OmbiRepository @Inject constructor(
         api.multiSearch(query, MultiSearchFilter()).body() ?: emptyList()
     }
 
+    suspend fun getMovieByMovieDbId(tmdbId: Int): Result<SearchMovieViewModel> = runCatching {
+        api.getMovieByMovieDbId(tmdbId).body()!!
+    }
+
     suspend fun getTvByMovieDbId(tmdbId: Int): Result<SearchTvShowViewModel> = runCatching {
         api.getTvByMovieDbId(tmdbId).body()!!
     }

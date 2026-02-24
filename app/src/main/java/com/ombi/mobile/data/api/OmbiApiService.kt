@@ -27,7 +27,11 @@ interface OmbiApiService {
         @Body filter: MultiSearchFilter
     ): Response<List<MultiSearchResult>>
 
-    /** Look up a TV show by its TheMovieDb ID to obtain the TVDb ID needed for requests. */
+    /** Look up a single movie by its TheMovieDb ID (includes available/requested/approved status). */
+    @GET("api/v2/search/movie/{theMovieDbId}")
+    suspend fun getMovieByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchMovieViewModel>
+
+    /** Look up a TV show by its TheMovieDb ID (includes available/requested/approved status and TVDb ID). */
     @GET("api/v2/search/Tv/moviedb/{theMovieDbId}")
     suspend fun getTvByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchTvShowViewModel>
 
