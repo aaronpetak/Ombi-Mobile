@@ -3,28 +3,31 @@ package com.ombi.mobile.data.api.models
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-/** Result from POST /api/v2/search/multi/{term} */
+/**
+ * Result from POST /api/v2/search/multi/{term}.
+ * Note: `id` is always the TheMovieDb ID (even for TV shows), returned as a string.
+ * `mediaType` is one of "movie", "tv", "person".
+ */
 @JsonClass(generateAdapter = true)
 data class MultiSearchResult(
-    @Json(name = "title") val title: String?,
-    @Json(name = "id") val id: Int,
-    @Json(name = "poster") val poster: String?,
-    @Json(name = "overview") val overview: String?,
-    @Json(name = "releaseDate") val releaseDate: String?,
-    /** 0 = Movie, 1 = TvShow */
-    @Json(name = "type") val type: Int,
-    @Json(name = "imdbId") val imdbId: String?,
-    @Json(name = "theMovieDbId") val theMovieDbId: Int?,
-    @Json(name = "tvDbId") val tvDbId: Int?,
-    @Json(name = "available") val available: Boolean = false,
-    @Json(name = "requested") val requested: Boolean = false,
-    @Json(name = "approved") val approved: Boolean = false,
-    @Json(name = "plexUrl") val plexUrl: String?,
-    @Json(name = "quality") val quality: String?
+    @Json(name = "id")        val id: String,
+    @Json(name = "mediaType") val mediaType: String,
+    @Json(name = "title")     val title: String?,
+    @Json(name = "poster")    val poster: String?,
+    @Json(name = "overview")  val overview: String?
 ) {
-    val isMovie: Boolean get() = type == 0
-    val isTv: Boolean get() = type == 1
+    val isMovie: Boolean get() = mediaType == "movie"
+    val isTv: Boolean   get() = mediaType == "tv"
 }
+
+/** Request body for POST /api/v2/search/multi/{term} */
+@JsonClass(generateAdapter = true)
+data class MultiSearchFilter(
+    @Json(name = "movies")  val movies: Boolean  = true,
+    @Json(name = "tvShows") val tvShows: Boolean = true,
+    @Json(name = "music")   val music: Boolean   = false,
+    @Json(name = "people")  val people: Boolean  = false
+)
 
 @JsonClass(generateAdapter = true)
 data class SearchMovieViewModel(

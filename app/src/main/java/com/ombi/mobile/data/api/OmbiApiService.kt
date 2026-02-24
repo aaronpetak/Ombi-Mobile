@@ -22,7 +22,14 @@ interface OmbiApiService {
     // ── Search (V2) ───────────────────────────────────────────────────────────
 
     @POST("api/v2/search/multi/{searchTerm}")
-    suspend fun multiSearch(@Path("searchTerm") searchTerm: String): Response<List<MultiSearchResult>>
+    suspend fun multiSearch(
+        @Path("searchTerm") searchTerm: String,
+        @Body filter: MultiSearchFilter
+    ): Response<List<MultiSearchResult>>
+
+    /** Look up a TV show by its TheMovieDb ID to obtain the TVDb ID needed for requests. */
+    @GET("api/v2/search/Tv/moviedb/{theMovieDbId}")
+    suspend fun getTvByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchTvShowViewModel>
 
     // ── Discover — Movies ─────────────────────────────────────────────────────
 
