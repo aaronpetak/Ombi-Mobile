@@ -63,7 +63,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
             }
         }
 
-        val canCancel = uiState.selectedStatus == StatusTab.PENDING
+        val canCancel = uiState.selectedStatus == StatusTab.PENDING && uiState.isAdmin
 
         PullToRefreshBox(
             isRefreshing = uiState.isLoading,
@@ -90,7 +90,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     posterPath = { it.posterPath },
                     statusLabel = { tvStatusLabel(it) },
                     canCancel = canCancel,
-                    onCancel = { viewModel.cancelTvRequest(it.id) }
+                    onCancel = { viewModel.cancelTvRequest(it.parentRequest?.id ?: it.id) }
                 )
             }
         }

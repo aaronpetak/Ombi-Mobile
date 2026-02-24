@@ -63,8 +63,9 @@ class OmbiRepository @Inject constructor(
     }
 
     suspend fun cancelMovieRequest(requestId: Int): Result<Unit> = runCatching {
-        api.cancelMovieRequest(requestId)
-    }.map { }
+        val response = api.cancelMovieRequest(requestId)
+        if (!response.isSuccessful) throw Exception("HTTP ${response.code()}")
+    }
 
     // ── TV Requests ───────────────────────────────────────────────────────────
 
@@ -77,8 +78,9 @@ class OmbiRepository @Inject constructor(
     }
 
     suspend fun cancelTvRequest(requestId: Int): Result<Unit> = runCatching {
-        api.cancelTvRequest(requestId)
-    }.map { }
+        val response = api.cancelTvRequest(requestId)
+        if (!response.isSuccessful) throw Exception("HTTP ${response.code()}")
+    }
 
     // ── User ──────────────────────────────────────────────────────────────────
 
