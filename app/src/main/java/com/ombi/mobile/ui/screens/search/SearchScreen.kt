@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ombi.mobile.ui.components.MediaCard
-import com.ombi.mobile.ui.components.StatusBadge
-import com.ombi.mobile.ui.components.mediaStatusFrom
 import com.ombi.mobile.ui.components.toTmdbUrl
 import com.ombi.mobile.ui.model.toMediaItem
 import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
@@ -57,12 +55,10 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.filteredResults, key = { "${it.type}_${it.id}" }) { result ->
-                        val status = mediaStatusFrom(result.available, result.requested, result.approved, null)
+                    items(uiState.filteredResults, key = { "${it.mediaType}_${it.id}" }) { result ->
                         MediaCard(
                             title = result.title,
                             posterUrl = result.poster.toTmdbUrl(),
-                            statusBadge = { StatusBadge(status) },
                             onClick = { viewModel.selectItem(result.toMediaItem()) }
                         )
                     }

@@ -75,7 +75,11 @@ class SearchViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                item.tvDbId?.let { repository.requestTv(it) }
+                // TV results from multi-search only carry the TMDB ID; resolve TVDb ID first.
+                val tvDbId = item.tvDbId ?: item.theMovieDbId?.let { tmdbId ->
+                    repository.getTvByMovieDbId(tmdbId).getOrNull()?.id
+                }
+                tvDbId?.let { repository.requestTv(it) }
             }
             result?.fold(
                 onSuccess = { engineResult ->
@@ -83,15 +87,7 @@ class SearchViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isRequesting = false,
                         requestMessage = msg,
-                        selectedItem = if (engineResult.result) item.copy(requested = true) else item,
-                        // Refresh status badge in the grid
-                        results = if (engineResult.result) {
-                            _uiState.value.results.map { r ->
-                                if ((item.isMovie && r.theMovieDbId == item.theMovieDbId) ||
-                                    (!item.isMovie && r.tvDbId == item.tvDbId)
-                                ) r.copy(requested = true) else r
-                            }
-                        } else _uiState.value.results
+                        selectedItem = if (engineResult.result) item.copy(requested = true) else item
                     )
                 },
                 onFailure = {

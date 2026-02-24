@@ -53,14 +53,14 @@ fun MultiSearchResult.toMediaItem() = MediaItem(
     title = title ?: "",
     posterPath = poster,
     overview = overview,
-    year = releaseDate?.take(4),
+    year = null,
     rating = null,
     isMovie = isMovie,
-    theMovieDbId = theMovieDbId,
-    tvDbId = tvDbId,
-    available = available,
-    requested = requested,
-    approved = approved
+    theMovieDbId = id.toIntOrNull(),
+    tvDbId = null,   // multi-search only returns the TMDB ID; tvDbId resolved on request
+    available = false,
+    requested = false,
+    approved = false
 )
 
 fun RecentlyAddedMovie.toMediaItem() = MediaItem(
