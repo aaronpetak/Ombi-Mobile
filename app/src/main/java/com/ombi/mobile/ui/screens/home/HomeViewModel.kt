@@ -73,7 +73,7 @@ class HomeViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                item.tvDbId?.let { repository.requestTv(it) }
+                item.theMovieDbId?.let { repository.requestTv(it) }
             }
             result?.fold(
                 onSuccess = { engineResult ->

@@ -72,7 +72,7 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    /** Fetches full item details (availability, request status, TVDb ID) and updates selectedItem. */
+    /** Fetches full item details (availability, request status) and updates selectedItem. */
     private suspend fun fetchItemStatus(item: MediaItem) {
         val enriched = if (item.isMovie) {
             item.theMovieDbId?.let { tmdbId ->
@@ -80,7 +80,9 @@ class SearchViewModel @Inject constructor(
             }
         } else {
             item.theMovieDbId?.let { tmdbId ->
+                // Preserve the original TMDB ID in case the TV response doesn't include it
                 repository.getTvByMovieDbId(tmdbId).getOrNull()?.toMediaItem()
+                    ?.let { if (it.theMovieDbId == null) it.copy(theMovieDbId = tmdbId) else it }
             }
         }
         // Only update if the user hasn't already dismissed the sheet
@@ -99,11 +101,7 @@ class SearchViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                // tvDbId is populated by fetchItemStatus; fall back to TMDB lookup if needed
-                val tvDbId = item.tvDbId ?: item.theMovieDbId?.let { tmdbId ->
-                    repository.getTvByMovieDbId(tmdbId).getOrNull()?.id
-                }
-                tvDbId?.let { repository.requestTv(it) }
+                item.theMovieDbId?.let { repository.requestTv(it) }
             }
             result?.fold(
                 onSuccess = { engineResult ->

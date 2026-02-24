@@ -49,6 +49,7 @@ data class SearchMovieViewModel(
 @JsonClass(generateAdapter = true)
 data class SearchTvShowViewModel(
     @Json(name = "id") val id: Int,
+    @Json(name = "theMovieDbId") val theMovieDbId: Int?,
     @Json(name = "title") val title: String?,
     @Json(name = "firstAired") val firstAired: String?,
     @Json(name = "banner") val banner: String?,
