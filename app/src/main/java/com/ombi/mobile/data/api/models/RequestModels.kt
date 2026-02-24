@@ -76,6 +76,7 @@ data class TvRequest(
     @Json(name = "id") val id: Int,
     @Json(name = "title") val title: String?,
     @Json(name = "posterPath") val posterPath: String?,
+    @Json(name = "background") val background: String?,
     @Json(name = "overview") val overview: String?,
     @Json(name = "approved") val approved: Boolean,
     @Json(name = "denied") val denied: Boolean?,
