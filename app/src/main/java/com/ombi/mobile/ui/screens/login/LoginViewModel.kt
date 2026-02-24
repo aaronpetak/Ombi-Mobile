@@ -35,8 +35,8 @@ class LoginViewModel @Inject constructor(
 
     fun loginWithCredentials(onSuccess: () -> Unit) {
         val state = _uiState.value
-        if (state.username.isBlank() || state.password.isBlank()) {
-            _uiState.value = state.copy(error = "Username and password are required")
+        if (state.username.isBlank()) {
+            _uiState.value = state.copy(error = "Username is required")
             return
         }
         viewModelScope.launch {
