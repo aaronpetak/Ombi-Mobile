@@ -5,8 +5,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ClaimCheckbox(
-    @Json(name = "value") val value: Boolean,
-    @Json(name = "claimName") val claimName: String
+    // "value" is the claim name (e.g. "Admin"), "enabled" is whether the user holds it
+    @Json(name = "value") val value: String,
+    @Json(name = "enabled") val enabled: Boolean
 )
 
 @JsonClass(generateAdapter = true)
@@ -20,5 +21,5 @@ data class UserViewModel(
     @Json(name = "hasLoggedIn") val hasLoggedIn: Boolean,
     @Json(name = "claims") val claims: List<ClaimCheckbox>?
 ) {
-    val isAdmin: Boolean get() = claims?.any { it.claimName == "Admin" && it.value } == true
+    val isAdmin: Boolean get() = claims?.any { it.value == "Admin" && it.enabled } == true
 }
