@@ -31,9 +31,13 @@ interface OmbiApiService {
     @GET("api/v2/search/movie/{theMovieDbId}")
     suspend fun getMovieByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchMovieViewModel>
 
-    /** Look up a TV show by its TheMovieDb ID (includes available/requested/approved status and TVDb ID). */
+    /** Look up a TV show by its TheMovieDb ID (includes available/requested/approved status). */
     @GET("api/v2/search/Tv/moviedb/{theMovieDbId}")
     suspend fun getTvByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchTvShowViewModel>
+
+    /** Look up a TV show by its TVDb ID (returns theMovieDbId needed for V2 requests). */
+    @GET("api/v2/search/tv/{tvDbId}")
+    suspend fun getTvByTvDbId(@Path("tvDbId") tvDbId: Int): Response<SearchTvShowViewModel>
 
     // ── Discover — Movies ─────────────────────────────────────────────────────
 
@@ -49,19 +53,7 @@ interface OmbiApiService {
         @Path("count") count: Int
     ): Response<List<SearchMovieViewModel>>
 
-    @GET("api/v2/search/movie/nowplaying/{position}/{count}")
-    suspend fun getNowPlayingMovies(
-        @Path("position") position: Int,
-        @Path("count") count: Int
-    ): Response<List<SearchMovieViewModel>>
-
     // ── Discover — TV ─────────────────────────────────────────────────────────
-
-    @GET("api/v2/search/tv/popular/{position}/{count}")
-    suspend fun getPopularTv(
-        @Path("position") position: Int,
-        @Path("count") count: Int
-    ): Response<List<SearchTvShowViewModel>>
 
     @GET("api/v2/search/tv/trending/{position}/{count}")
     suspend fun getTrendingTv(
@@ -79,7 +71,7 @@ interface OmbiApiService {
 
     // ── Movie Requests ────────────────────────────────────────────────────────
 
-    @POST("api/v2/requests/movie")
+    @POST("api/v1/request/movie")
     suspend fun requestMovie(@Body request: MovieRequestBody): Response<RequestEngineResult>
 
     @GET("api/v2/requests/movie/{count}/{position}/{sort}/{sortOrder}")

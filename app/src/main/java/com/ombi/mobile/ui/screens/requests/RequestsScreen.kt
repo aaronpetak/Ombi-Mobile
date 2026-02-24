@@ -16,10 +16,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.ombi.mobile.data.api.models.MovieRequest
 import com.ombi.mobile.data.api.models.TvRequest
-
-private const val TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w92"
+import com.ombi.mobile.ui.components.toTmdbUrl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,12 +49,13 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     selected = uiState.selectedStatus == status,
                     onClick = { viewModel.onStatusSelected(status) },
                     text = {
-                        val label = if (status == StatusTab.PENDING) "Pending" else "Processed"
-                        val count = when {
-                            status == StatusTab.PENDING && uiState.selectedTab == RequestTab.MOVIES -> uiState.pendingMovies.size
-                            status == StatusTab.PROCESSED && uiState.selectedTab == RequestTab.MOVIES -> uiState.processedMovies.size
-                            status == StatusTab.PENDING -> uiState.pendingTv.size
-                            else -> uiState.processedTv.size
+                        val label = when (status) {
+                            StatusTab.PENDING -> "Pending"
+                            StatusTab.PROCESSED -> "Processed"
+                        }
+                        val count = when (status) {
+                            StatusTab.PENDING -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.pendingMovies.size else uiState.pendingTv.size
+                            StatusTab.PROCESSED -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.processedMovies.size else uiState.processedTv.size
                         }
                         Text("$label ($count)")
                     }
@@ -87,7 +86,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     emptyMessage = if (canCancel) "No pending TV requests" else "No completed TV requests",
                     items = uiState.visibleTv,
                     key = { it.id },
-                    title = { it.title ?: "Unknown" },
+                    title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
                     posterPath = { it.posterPath },
                     statusLabel = { tvStatusLabel(it) },
                     canCancel = canCancel,
@@ -101,7 +100,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
 private fun tvStatusLabel(request: TvRequest): String = when {
     request.available -> "Available"
     request.denied == true -> "Denied"
-    request.childRequests?.any { it.approved } == true -> "Processing"
+    request.approved -> "Processing"
     else -> "Pending"
 }
 
@@ -164,7 +163,7 @@ private fun RequestListItem(
         },
         leadingContent = {
             AsyncImage(
-                model = posterPath?.let { TMDB_IMAGE_BASE + it },
+                model = posterPath.toTmdbUrl("w92"),
                 contentDescription = title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

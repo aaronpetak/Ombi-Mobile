@@ -1,6 +1,7 @@
 package com.ombi.mobile.data.auth
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -44,16 +45,16 @@ class AuthManager @Inject constructor(
     fun getUsername(): String? = prefs.getString(KEY_USERNAME, null)
 
     fun saveToken(token: String, expiry: String, username: String) {
-        prefs.edit()
-            .putString(KEY_TOKEN, token)
-            .putString(KEY_EXPIRY, expiry)
-            .putString(KEY_USERNAME, username)
-            .apply()
+        prefs.edit {
+            putString(KEY_TOKEN, token)
+            putString(KEY_EXPIRY, expiry)
+            putString(KEY_USERNAME, username)
+        }
         _isLoggedIn.value = true
     }
 
     fun clearToken() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
         _isLoggedIn.value = false
     }
 }

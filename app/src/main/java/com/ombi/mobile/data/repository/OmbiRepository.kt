@@ -24,6 +24,10 @@ class OmbiRepository @Inject constructor(
         api.getTvByMovieDbId(tmdbId).requireBody()
     }
 
+    suspend fun getTvByTvDbId(tvDbId: Int): Result<SearchTvShowViewModel> = runCatching {
+        api.getTvByTvDbId(tvDbId).requireBody()
+    }
+
     // ── Discover ──────────────────────────────────────────────────────────────
 
     suspend fun getPopularMovies(position: Int = 0, count: Int = 20): Result<List<SearchMovieViewModel>> = runCatching {
@@ -32,14 +36,6 @@ class OmbiRepository @Inject constructor(
 
     suspend fun getUpcomingMovies(position: Int = 0, count: Int = 20): Result<List<SearchMovieViewModel>> = runCatching {
         api.getUpcomingMovies(position, count).body() ?: emptyList()
-    }
-
-    suspend fun getNowPlayingMovies(position: Int = 0, count: Int = 20): Result<List<SearchMovieViewModel>> = runCatching {
-        api.getNowPlayingMovies(position, count).body() ?: emptyList()
-    }
-
-    suspend fun getPopularTv(position: Int = 0, count: Int = 20): Result<List<SearchTvShowViewModel>> = runCatching {
-        api.getPopularTv(position, count).body() ?: emptyList()
     }
 
     suspend fun getTrendingTv(position: Int = 0, count: Int = 20): Result<List<SearchTvShowViewModel>> = runCatching {
@@ -68,8 +64,7 @@ class OmbiRepository @Inject constructor(
 
     suspend fun cancelMovieRequest(requestId: Int): Result<Unit> = runCatching {
         api.cancelMovieRequest(requestId)
-        Unit
-    }
+    }.map { }
 
     // ── TV Requests ───────────────────────────────────────────────────────────
 
@@ -83,8 +78,7 @@ class OmbiRepository @Inject constructor(
 
     suspend fun cancelTvRequest(requestId: Int): Result<Unit> = runCatching {
         api.cancelTvRequest(requestId)
-        Unit
-    }
+    }.map { }
 
     // ── User ──────────────────────────────────────────────────────────────────
 

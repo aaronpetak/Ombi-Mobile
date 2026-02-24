@@ -88,7 +88,7 @@ fun MediaDetailSheet(
             }
 
             // Request button
-            val canRequest = !item.available && !item.requested && !item.approved && item.denied == false
+            val canRequest = !item.available && !item.requested && !item.approved && !item.denied
 
             Button(
                 onClick = onRequest,
