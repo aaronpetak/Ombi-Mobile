@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,7 +33,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
 
-        // Tab row
+        // Primary tab row: Movies | TV
         TabRow(selectedTabIndex = uiState.selectedTab.ordinal) {
             RequestTab.entries.forEach { tab ->
                 Tab(
@@ -43,86 +44,99 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
             }
         }
 
+        // Secondary tab row: Pending | Processed
+        SecondaryTabRow(selectedTabIndex = uiState.selectedStatus.ordinal) {
+            StatusTab.entries.forEach { status ->
+                Tab(
+                    selected = uiState.selectedStatus == status,
+                    onClick = { viewModel.onStatusSelected(status) },
+                    text = {
+                        val label = if (status == StatusTab.PENDING) "Pending" else "Processed"
+                        val count = when {
+                            status == StatusTab.PENDING && uiState.selectedTab == RequestTab.MOVIES -> uiState.pendingMovies.size
+                            status == StatusTab.PROCESSED && uiState.selectedTab == RequestTab.MOVIES -> uiState.processedMovies.size
+                            status == StatusTab.PENDING -> uiState.pendingTv.size
+                            else -> uiState.processedTv.size
+                        }
+                        Text("$label ($count)")
+                    }
+                )
+            }
+        }
+
+        val canCancel = uiState.selectedStatus == StatusTab.PENDING
+
         PullToRefreshBox(
             isRefreshing = uiState.isLoading,
             onRefresh = viewModel::load
         ) {
             when (uiState.selectedTab) {
-                RequestTab.MOVIES -> MovieRequestsList(
-                    requests = uiState.movieRequests,
+                RequestTab.MOVIES -> RequestList(
                     isLoading = uiState.isLoading,
-                    onCancel = viewModel::cancelMovieRequest
+                    emptyMessage = if (canCancel) "No pending movie requests" else "No completed movie requests",
+                    items = uiState.visibleMovies,
+                    key = { it.id },
+                    title = { it.title ?: "Unknown" },
+                    posterPath = { it.posterPath },
+                    statusLabel = { it.statusLabel },
+                    canCancel = canCancel,
+                    onCancel = { viewModel.cancelMovieRequest(it.id) }
                 )
-                RequestTab.TV -> TvRequestsList(
-                    requests = uiState.tvRequests,
+                RequestTab.TV -> RequestList(
                     isLoading = uiState.isLoading,
-                    onCancel = viewModel::cancelTvRequest
+                    emptyMessage = if (canCancel) "No pending TV requests" else "No completed TV requests",
+                    items = uiState.visibleTv,
+                    key = { it.id },
+                    title = { it.title ?: "Unknown" },
+                    posterPath = { it.posterPath },
+                    statusLabel = { tvStatusLabel(it) },
+                    canCancel = canCancel,
+                    onCancel = { viewModel.cancelTvRequest(it.id) }
                 )
             }
         }
     }
 }
 
-@Composable
-private fun MovieRequestsList(
-    requests: List<MovieRequest>,
-    isLoading: Boolean,
-    onCancel: (Int) -> Unit
-) {
-    if (isLoading && requests.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-    if (requests.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No movie requests", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        return
-    }
-    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-        items(requests, key = { it.id }) { request ->
-            RequestListItem(
-                title = request.title ?: "Unknown",
-                posterPath = request.posterPath,
-                statusLabel = request.statusLabel,
-                isPending = !request.approved && request.denied != true && !request.available,
-                onCancel = { onCancel(request.id) }
-            )
-        }
-    }
+private fun tvStatusLabel(request: TvRequest): String = when {
+    request.available -> "Available"
+    request.denied == true -> "Denied"
+    request.childRequests?.any { it.approved } == true -> "Processing"
+    else -> "Pending"
 }
 
 @Composable
-private fun TvRequestsList(
-    requests: List<TvRequest>,
+private fun <T> RequestList(
     isLoading: Boolean,
-    onCancel: (Int) -> Unit
+    emptyMessage: String,
+    items: List<T>,
+    key: (T) -> Any,
+    title: (T) -> String,
+    posterPath: (T) -> String?,
+    statusLabel: (T) -> String,
+    canCancel: Boolean,
+    onCancel: (T) -> Unit
 ) {
-    if (isLoading && requests.isEmpty()) {
+    if (isLoading && items.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
-    if (requests.isEmpty()) {
+    if (items.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No TV requests", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(emptyMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
     LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-        items(requests, key = { it.id }) { request ->
-            val isPending = request.childRequests?.any {
-                !it.approved && it.denied != true && !it.available
-            } == true
+        items(items, key = { key(it) }) { item ->
             RequestListItem(
-                title = request.title ?: "Unknown",
-                posterPath = request.posterPath,
-                statusLabel = if (request.available) "Available" else if (isPending) "Pending" else "Processing",
-                isPending = isPending,
-                onCancel = { onCancel(request.id) }
+                title = title(item),
+                posterPath = posterPath(item),
+                statusLabel = statusLabel(item),
+                canCancel = canCancel,
+                onCancel = { onCancel(item) }
             )
         }
     }
@@ -133,20 +147,20 @@ private fun RequestListItem(
     title: String,
     posterPath: String?,
     statusLabel: String,
-    isPending: Boolean,
+    canCancel: Boolean,
     onCancel: () -> Unit
 ) {
+    val statusColor: Color = when (statusLabel) {
+        "Available"  -> Color(0xFF388E3C)
+        "Denied"     -> MaterialTheme.colorScheme.error
+        "Processing" -> Color(0xFFF57C00)
+        else         -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = {
-            Text(
-                statusLabel,
-                color = when (statusLabel) {
-                    "Available" -> MaterialTheme.colorScheme.tertiary
-                    "Denied" -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
+            Text(statusLabel, color = statusColor)
         },
         leadingContent = {
             AsyncImage(
@@ -159,7 +173,7 @@ private fun RequestListItem(
             )
         },
         trailingContent = {
-            if (isPending) {
+            if (canCancel) {
                 IconButton(onClick = onCancel) {
                     Icon(
                         Icons.Default.Delete,

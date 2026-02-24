@@ -14,14 +14,27 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 enum class RequestTab { MOVIES, TV }
+enum class StatusTab { PENDING, PROCESSED }
 
 data class RequestsUiState(
     val movieRequests: List<MovieRequest> = emptyList(),
     val tvRequests: List<TvRequest> = emptyList(),
     val selectedTab: RequestTab = RequestTab.MOVIES,
+    val selectedStatus: StatusTab = StatusTab.PENDING,
     val isLoading: Boolean = false,
     val error: String? = null
-)
+) {
+    // Pending = not yet available and not denied
+    val pendingMovies: List<MovieRequest> get() = movieRequests.filter { !it.available && it.denied != true }
+    // Processed = available or denied
+    val processedMovies: List<MovieRequest> get() = movieRequests.filter { it.available || it.denied == true }
+
+    val pendingTv: List<TvRequest> get() = tvRequests.filter { !it.available && it.denied != true }
+    val processedTv: List<TvRequest> get() = tvRequests.filter { it.available || it.denied == true }
+
+    val visibleMovies: List<MovieRequest> get() = if (selectedStatus == StatusTab.PENDING) pendingMovies else processedMovies
+    val visibleTv: List<TvRequest> get() = if (selectedStatus == StatusTab.PENDING) pendingTv else processedTv
+}
 
 @HiltViewModel
 class RequestsViewModel @Inject constructor(
@@ -54,6 +67,10 @@ class RequestsViewModel @Inject constructor(
 
     fun onTabSelected(tab: RequestTab) {
         _uiState.value = _uiState.value.copy(selectedTab = tab)
+    }
+
+    fun onStatusSelected(status: StatusTab) {
+        _uiState.value = _uiState.value.copy(selectedStatus = status)
     }
 
     fun cancelMovieRequest(requestId: Int) {
