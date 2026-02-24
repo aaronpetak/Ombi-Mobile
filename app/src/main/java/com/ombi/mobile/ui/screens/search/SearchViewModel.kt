@@ -21,6 +21,7 @@ data class SearchUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedItem: MediaItem? = null,
+    val isStatusLoading: Boolean = false,
     val isRequesting: Boolean = false,
     val requestMessage: String? = null
 ) {
@@ -65,7 +66,30 @@ class SearchViewModel @Inject constructor(
     }
 
     fun selectItem(item: MediaItem?) {
-        _uiState.value = _uiState.value.copy(selectedItem = item, requestMessage = null)
+        _uiState.value = _uiState.value.copy(selectedItem = item, requestMessage = null, isStatusLoading = item != null)
+        if (item != null) {
+            viewModelScope.launch { fetchItemStatus(item) }
+        }
+    }
+
+    /** Fetches full item details (availability, request status, TVDb ID) and updates selectedItem. */
+    private suspend fun fetchItemStatus(item: MediaItem) {
+        val enriched = if (item.isMovie) {
+            item.theMovieDbId?.let { tmdbId ->
+                repository.getMovieByMovieDbId(tmdbId).getOrNull()?.toMediaItem()
+            }
+        } else {
+            item.theMovieDbId?.let { tmdbId ->
+                repository.getTvByMovieDbId(tmdbId).getOrNull()?.toMediaItem()
+            }
+        }
+        // Only update if the user hasn't already dismissed the sheet
+        if (_uiState.value.selectedItem != null) {
+            _uiState.value = _uiState.value.copy(
+                selectedItem = enriched ?: item,
+                isStatusLoading = false
+            )
+        }
     }
 
     fun requestSelected() {
@@ -75,7 +99,7 @@ class SearchViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                // TV results from multi-search only carry the TMDB ID; resolve TVDb ID first.
+                // tvDbId is populated by fetchItemStatus; fall back to TMDB lookup if needed
                 val tvDbId = item.tvDbId ?: item.theMovieDbId?.let { tmdbId ->
                     repository.getTvByMovieDbId(tmdbId).getOrNull()?.id
                 }
