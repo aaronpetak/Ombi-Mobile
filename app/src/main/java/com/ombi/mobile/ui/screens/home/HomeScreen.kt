@@ -86,7 +86,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                         uiState.trendingTv.take(20).forEach { tv ->
                             MediaCard(
                                 title = tv.title,
-                                posterUrl = tv.banner.toTmdbUrl(),
+                                posterUrl = tv.backdropPath.toTmdbUrl(),
                                 onClick = { viewModel.selectItem(tv.toMediaItem()) }
                             )
                         }

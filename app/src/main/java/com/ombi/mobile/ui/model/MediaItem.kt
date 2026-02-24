@@ -37,7 +37,7 @@ fun SearchMovieViewModel.toMediaItem() = MediaItem(
 
 fun SearchTvShowViewModel.toMediaItem() = MediaItem(
     title = title ?: "",
-    posterPath = banner,
+    posterPath = backdropPath,
     overview = overview,
     year = firstAired?.take(4),
     rating = rating,
