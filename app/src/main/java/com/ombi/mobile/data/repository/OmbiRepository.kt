@@ -2,6 +2,7 @@ package com.ombi.mobile.data.repository
 
 import com.ombi.mobile.data.api.OmbiApiService
 import com.ombi.mobile.data.api.models.*
+import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,11 +17,11 @@ class OmbiRepository @Inject constructor(
     }
 
     suspend fun getMovieByMovieDbId(tmdbId: Int): Result<SearchMovieViewModel> = runCatching {
-        api.getMovieByMovieDbId(tmdbId).body()!!
+        api.getMovieByMovieDbId(tmdbId).requireBody()
     }
 
     suspend fun getTvByMovieDbId(tmdbId: Int): Result<SearchTvShowViewModel> = runCatching {
-        api.getTvByMovieDbId(tmdbId).body()!!
+        api.getTvByMovieDbId(tmdbId).requireBody()
     }
 
     // ── Discover ──────────────────────────────────────────────────────────────
@@ -58,11 +59,11 @@ class OmbiRepository @Inject constructor(
     // ── Movie Requests ────────────────────────────────────────────────────────
 
     suspend fun requestMovie(movieDbId: Int): Result<RequestEngineResult> = runCatching {
-        api.requestMovie(MovieRequestBody(movieDbId)).body()!!
+        api.requestMovie(MovieRequestBody(movieDbId)).requireBody()
     }
 
     suspend fun getMovieRequests(count: Int = 30, position: Int = 0): Result<RequestsViewModel<MovieRequest>> = runCatching {
-        api.getMovieRequests(count, position).body()!!
+        api.getMovieRequests(count, position).requireBody()
     }
 
     suspend fun cancelMovieRequest(requestId: Int): Result<Unit> = runCatching {
@@ -73,11 +74,11 @@ class OmbiRepository @Inject constructor(
     // ── TV Requests ───────────────────────────────────────────────────────────
 
     suspend fun requestTv(tvDbId: Int, requestAll: Boolean = true): Result<RequestEngineResult> = runCatching {
-        api.requestTv(TvRequestBody(tvDbId = tvDbId, requestAll = requestAll)).body()!!
+        api.requestTv(TvRequestBody(tvDbId = tvDbId, requestAll = requestAll)).requireBody()
     }
 
     suspend fun getTvRequests(count: Int = 30, position: Int = 0): Result<RequestsViewModel<TvRequest>> = runCatching {
-        api.getTvRequests(count, position).body()!!
+        api.getTvRequests(count, position).requireBody()
     }
 
     suspend fun cancelTvRequest(requestId: Int): Result<Unit> = runCatching {
@@ -88,6 +89,21 @@ class OmbiRepository @Inject constructor(
     // ── User ──────────────────────────────────────────────────────────────────
 
     suspend fun getCurrentUser(): Result<UserViewModel> = runCatching {
-        api.getCurrentUser().body()!!
+        api.getCurrentUser().requireBody()
     }
+}
+
+/**
+ * Returns the response body, or throws an [Exception] with the HTTP status code and error body
+ * text so callers get a meaningful message instead of a NullPointerException.
+ */
+private fun <T> Response<T>.requireBody(): T {
+    if (isSuccessful) {
+        return body() ?: throw Exception("Empty response body (HTTP ${code()})")
+    }
+    val errText = errorBody()?.string()?.take(300)?.trim()
+    throw Exception(
+        if (!errText.isNullOrBlank()) "HTTP ${code()}: $errText"
+        else "HTTP ${code()}"
+    )
 }
