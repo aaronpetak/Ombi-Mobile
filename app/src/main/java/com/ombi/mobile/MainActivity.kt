@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val theme by userPreferences.theme.collectAsState(initial = "system")
+            val theme by userPreferences.theme.collectAsState(initial = "dark")
             val darkTheme = when (theme) {
                 "dark"  -> true
                 "light" -> false

@@ -28,7 +28,7 @@ class UserPreferences @Inject constructor(
     }
 
     val theme: Flow<String> = context.dataStore.data.map {
-        it[KEY_THEME] ?: "system"
+        it[KEY_THEME] ?: "dark"
     }
 
     /**
