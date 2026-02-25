@@ -1,7 +1,6 @@
 package com.ombi.mobile.data.repository
 
 import com.ombi.mobile.data.api.OmbiApiService
-import com.ombi.mobile.data.api.models.PlexTokenAuthRequest
 import com.ombi.mobile.data.api.models.UserAuthRequest
 import com.ombi.mobile.data.auth.AuthManager
 import javax.inject.Inject
@@ -23,21 +22,6 @@ class AuthRepository @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Invalid credentials (${response.code()})"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun loginWithPlexToken(plexToken: String): Result<Unit> {
-        return try {
-            val response = api.loginWithPlexToken(PlexTokenAuthRequest(plexToken))
-            if (response.isSuccessful && response.body() != null) {
-                val token = response.body()!!
-                authManager.saveToken(token.accessToken, token.expiration, "plex_user")
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Plex login failed (${response.code()})"))
             }
         } catch (e: Exception) {
             Result.failure(e)

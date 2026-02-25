@@ -5,9 +5,6 @@ import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,9 +35,6 @@ class AuthManager @Inject constructor(
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    private val _isLoggedIn = MutableStateFlow(!prefs.getString(KEY_TOKEN, null).isNullOrBlank())
-    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
-
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
     fun getUsername(): String? = prefs.getString(KEY_USERNAME, null)
 
@@ -50,11 +44,9 @@ class AuthManager @Inject constructor(
             putString(KEY_EXPIRY, expiry)
             putString(KEY_USERNAME, username)
         }
-        _isLoggedIn.value = true
     }
 
     fun clearToken() {
         prefs.edit { clear() }
-        _isLoggedIn.value = false
     }
 }

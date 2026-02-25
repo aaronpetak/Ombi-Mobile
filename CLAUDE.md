@@ -60,7 +60,7 @@ Repositories, `AuthManager`, and `UserPreferences` are `@Singleton` with `@Injec
 The user configures the Ombi server URL in Settings. The `DynamicUrlInterceptor` (inside `NetworkModule`) reads the URL from `UserPreferences.getServerUrlSync()` on every OkHttp request and rewrites the host. Retrofit's base URL is a placeholder (`http://localhost/`).
 
 ### Auth
-`AuthManager` stores the JWT token in `EncryptedSharedPreferences` (Android Keystore / AES256-GCM). The `authInterceptor` in `NetworkModule` attaches `Authorization: Bearer <token>` to every request. `AuthManager.isLoggedIn` is a `StateFlow<Boolean>` that drives the nav graph start destination.
+`AuthManager` stores the JWT token in `EncryptedSharedPreferences` (Android Keystore / AES256-GCM). The `authInterceptor` in `NetworkModule` attaches `Authorization: Bearer <token>` to every request. The nav graph start destination is determined at launch by checking whether a server URL is saved in `UserPreferences`.
 
 ### Navigation
 Single-activity. Two-level navigation:
@@ -75,21 +75,19 @@ Single-activity. Two-level navigation:
 
 ### Key shared components
 | Component | Location |
-|---|---|
+| --- | --- |
 | `MediaCard` | `ui/components/MediaCard.kt` — poster card with optional status badge |
-| `StatusBadge` | `ui/components/StatusBadge.kt` — color-coded availability chip |
 | `MediaRow` | inside `MediaCard.kt` — labeled horizontal scroll row |
 
 ### Ombi API reference
 | Feature | Endpoint |
-|---|---|
+| --- | --- |
 | Login | `POST /api/v1/token` |
-| Plex login | `POST /api/v1/token/plextoken` |
 | Current user | `GET /api/v1/identity` |
 | Multi-search | `GET /api/v2/search/multi/{term}` |
 | Popular/Upcoming/Trending | `GET /api/v2/search/movie\|tv/{category}/{pos}/{count}` |
 | Recently added | `GET /api/v1/recentlyadded/movies` + `/tv` |
-| Request movie | `POST /api/v2/requests/movie` |
+| Request movie | `POST /api/v1/request/movie` |
 | Request TV | `POST /api/v2/requests/tv` |
 | List requests | `GET /api/v2/requests/movie\|tv/{count}/{pos}/{sort}/{order}` |
 | Cancel request | `DELETE /api/v1/request/movie\|tv/{id}` |

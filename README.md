@@ -47,7 +47,7 @@ Select a device or emulator and press **Run**. On first launch, enter your Ombi 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Language | Kotlin |
 | UI | Jetpack Compose + Material 3 |
 | Navigation | Compose Navigation |

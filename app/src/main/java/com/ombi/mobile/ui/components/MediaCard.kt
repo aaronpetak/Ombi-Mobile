@@ -76,7 +76,7 @@ fun MediaCard(
     }
 }
 
-/** Labelled horizontally-scrollable row of [MediaCard]s. */
+/** Labeled horizontally-scrollable row of [MediaCard]s. */
 @Composable
 fun MediaRow(
     title: String,
