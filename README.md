@@ -90,8 +90,8 @@ A native Android client for [Ombi](https://github.com/Ombi-app/Ombi) — a self-
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/ombi-frontend.git
-cd ombi-frontend
+git clone https://github.com/aaronpetak/Ombi-Mobile.git
+cd Ombi-Mobile
 ```
 
 ### 2. Open in Android Studio
