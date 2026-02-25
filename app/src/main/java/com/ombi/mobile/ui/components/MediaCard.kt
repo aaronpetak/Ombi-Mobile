@@ -29,6 +29,19 @@ fun String?.toTmdbUrl(size: String = "w342"): String? {
     return "https://image.tmdb.org/t/p/$size$path"
 }
 
+/**
+ * Compact poster card used in content rows and the search grid.
+ *
+ * Displays a poster image at a 2:3 aspect ratio with an optional [statusBadge]
+ * overlaid in the top-right corner, and up to two lines of title text below.
+ *
+ * @param title Display title shown below the poster; omitted if null or blank.
+ * @param posterUrl Full TMDB image URL (use [toTmdbUrl] to build from a relative path).
+ * @param modifier Additional layout modifiers.
+ * @param width Fixed card width; defaults to 120 dp.
+ * @param statusBadge Optional composable overlaid on the top-right of the poster.
+ * @param onClick Tap callback; card is non-interactive if null.
+ */
 @Composable
 fun MediaCard(
     title: String?,

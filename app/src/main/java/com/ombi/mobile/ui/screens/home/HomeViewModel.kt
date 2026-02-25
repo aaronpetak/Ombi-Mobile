@@ -16,19 +16,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * UI state for the Home screen.
+ *
+ * Holds five content rows that are loaded in parallel on launch:
+ * recently-added movies and TV, popular movies, trending TV, and upcoming movies.
+ *
+ * [selectedItem] drives the detail bottom sheet — null means no sheet is visible.
+ * [isRequesting] and [requestMessage] reflect the in-flight request state shown
+ * inside the sheet.
+ */
 data class HomeUiState(
-    val recentMovies: List<RecentlyAddedMovie> = emptyList(),
-    val recentTv: List<RecentlyAddedTv> = emptyList(),
-    val popularMovies: List<SearchMovieViewModel> = emptyList(),
-    val trendingTv: List<SearchTvShowViewModel> = emptyList(),
-    val upcomingMovies: List<SearchMovieViewModel> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val selectedItem: MediaItem? = null,
-    val isRequesting: Boolean = false,
-    val requestMessage: String? = null
+    val recentMovies:   List<RecentlyAddedMovie>       = emptyList(),
+    val recentTv:       List<RecentlyAddedTv>          = emptyList(),
+    val popularMovies:  List<SearchMovieViewModel>     = emptyList(),
+    val trendingTv:     List<SearchTvShowViewModel>    = emptyList(),
+    val upcomingMovies: List<SearchMovieViewModel>     = emptyList(),
+    val isLoading:      Boolean                        = false,
+    val error:          String?                        = null,
+    val selectedItem:   MediaItem?                     = null,
+    val isRequesting:   Boolean                        = false,
+    val requestMessage: String?                        = null
 )
 
+/**
+ * ViewModel for the Home / Discover screen.
+ *
+ * On initialisation (and on pull-to-refresh) all five content rows are fetched
+ * concurrently using [async] / [await]. Individual row failures are silently
+ * swallowed — the row simply won't appear rather than crashing the whole screen.
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: OmbiRepository
@@ -41,31 +58,45 @@ class HomeViewModel @Inject constructor(
         load()
     }
 
+    /** Refreshes all content rows concurrently. Safe to call multiple times. */
     fun load() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            val recentMovies = async { repository.getRecentlyAddedMovies() }
-            val recentTv = async { repository.getRecentlyAddedTv() }
-            val popularMovies = async { repository.getPopularMovies() }
-            val trendingTv = async { repository.getTrendingTv() }
+            // Fan-out: all five requests run in parallel
+            val recentMovies   = async { repository.getRecentlyAddedMovies() }
+            val recentTv       = async { repository.getRecentlyAddedTv() }
+            val popularMovies  = async { repository.getPopularMovies() }
+            val trendingTv     = async { repository.getTrendingTv() }
             val upcomingMovies = async { repository.getUpcomingMovies() }
 
             _uiState.value = _uiState.value.copy(
-                recentMovies = recentMovies.await().getOrDefault(emptyList()),
-                recentTv = recentTv.await().getOrDefault(emptyList()),
-                popularMovies = popularMovies.await().getOrDefault(emptyList()),
-                trendingTv = trendingTv.await().getOrDefault(emptyList()),
+                recentMovies   = recentMovies.await().getOrDefault(emptyList()),
+                recentTv       = recentTv.await().getOrDefault(emptyList()),
+                popularMovies  = popularMovies.await().getOrDefault(emptyList()),
+                trendingTv     = trendingTv.await().getOrDefault(emptyList()),
                 upcomingMovies = upcomingMovies.await().getOrDefault(emptyList()),
-                isLoading = false
+                isLoading      = false
             )
         }
     }
 
+    /**
+     * Opens or closes the detail bottom sheet for [item].
+     * Passing null dismisses the sheet and clears any request message.
+     */
     fun selectItem(item: MediaItem?) {
         _uiState.value = _uiState.value.copy(selectedItem = item, requestMessage = null)
     }
 
+    /**
+     * Submits a media request for the currently selected item.
+     *
+     * For movies, uses the TMDB ID directly. For TV shows, [theMovieDbId] is
+     * required by the Ombi V2 endpoint — if only a TVDb ID is available
+     * (common for recently-added TV), the TMDB ID is resolved via a secondary
+     * lookup before the request is submitted.
+     */
     fun requestSelected() {
         val item = _uiState.value.selectedItem ?: return
         viewModelScope.launch {
@@ -74,7 +105,7 @@ class HomeViewModel @Inject constructor(
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
                 // theMovieDbId is required for V2 TV requests; discover endpoints may only
-                // populate tvDbId, so resolve the TMDB ID via a TVDB lookup if needed
+                // populate tvDbId, so resolve the TMDB ID via a TVDb lookup if needed
                 val tmdbId = item.theMovieDbId
                     ?: item.tvDbId?.let { repository.getTvByTvDbId(it).getOrNull()?.theMovieDbId }
                 tmdbId?.let { repository.requestTv(it) }
@@ -83,18 +114,20 @@ class HomeViewModel @Inject constructor(
                 onSuccess = { engineResult ->
                     val msg = if (engineResult.result) "Request submitted!" else "Failed: ${engineResult.errorMessage}"
                     _uiState.value = _uiState.value.copy(
-                        isRequesting = false,
+                        isRequesting  = false,
                         requestMessage = msg,
-                        selectedItem = if (engineResult.result) item.copy(requested = true) else item
+                        // Optimistically mark the item as requested so the button updates immediately
+                        selectedItem  = if (engineResult.result) item.copy(requested = true) else item
                     )
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(
-                        isRequesting = false,
+                        isRequesting  = false,
                         requestMessage = "Error: ${it.message}"
                     )
                 }
             ) ?: run {
+                // result is null when neither theMovieDbId nor tvDbId could be resolved
                 _uiState.value = _uiState.value.copy(isRequesting = false, requestMessage = "Missing ID for request")
             }
         }

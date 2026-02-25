@@ -4,6 +4,20 @@ import com.ombi.mobile.data.api.models.*
 import retrofit2.Response
 import retrofit2.http.*
 
+/**
+ * Retrofit service interface for the Ombi REST API.
+ *
+ * The base URL is a placeholder (`http://localhost/`); the actual host is substituted
+ * at runtime by [com.ombi.mobile.di.NetworkModule]'s `dynamicUrlInterceptor`, which
+ * reads the user-configured server URL from [com.ombi.mobile.data.preferences.UserPreferences].
+ *
+ * Bearer-token authentication is added automatically by the `authInterceptor` in
+ * [com.ombi.mobile.di.NetworkModule] — no manual header needed per call.
+ *
+ * API version note:
+ * - V1 (`/api/v1/`) — auth, identity, recently-added, and request management (CRUD)
+ * - V2 (`/api/v2/`) — search, discover, and paged request listings
+ */
 interface OmbiApiService {
 
     // ── Auth ──────────────────────────────────────────────────────────────────
@@ -11,6 +25,7 @@ interface OmbiApiService {
     @POST("api/v1/token")
     suspend fun login(@Body request: UserAuthRequest): Response<AuthTokenResponse>
 
+    /** Alternative Plex SSO login (defined for completeness; not used by the current UI). */
     @POST("api/v1/token/plextoken")
     suspend fun loginWithPlexToken(@Body request: PlexTokenAuthRequest): Response<AuthTokenResponse>
 

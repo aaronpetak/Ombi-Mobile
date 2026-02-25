@@ -16,6 +16,22 @@ import com.ombi.mobile.ui.components.toTmdbUrl
 import com.ombi.mobile.ui.model.*
 import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
 
+/**
+ * Home / Discover screen showing curated content rows fetched from the Ombi instance.
+ *
+ * Content rows (each capped at 20 items, hidden when empty):
+ * - Recently Added Movies
+ * - Recently Added TV
+ * - Popular Movies
+ * - Trending TV
+ * - Upcoming Movies
+ *
+ * Each row is a horizontally-scrollable [MediaRow] of [MediaCard]s.
+ * Tapping a card opens a [MediaDetailSheet] where the user can request the media.
+ *
+ * Pull-to-refresh triggers [HomeViewModel.load], which re-fetches all rows concurrently.
+ * A full-screen spinner is shown only on the very first load when all rows are empty.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
