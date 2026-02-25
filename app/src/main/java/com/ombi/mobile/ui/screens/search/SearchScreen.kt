@@ -18,6 +18,24 @@ import com.ombi.mobile.ui.components.toTmdbUrl
 import com.ombi.mobile.ui.model.toMediaItem
 import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
 
+/**
+ * Search screen for discovering movies and TV shows via the Ombi multi-search API.
+ *
+ * Layout:
+ * 1. [SearchBar] — debounced text field; spinner shown while a search is in-flight.
+ * 2. [FilterRow] — filter chips to narrow results to All / Movies / TV.
+ * 3. [LazyVerticalGrid] — adaptive grid of [MediaCard]s (min 110 dp per cell).
+ *
+ * Empty-state hints:
+ * - Query < 2 chars: "Search for movies and TV shows"
+ * - No results after search: "No results found"
+ *
+ * Tapping a card calls [SearchViewModel.selectItem], which opens a [MediaDetailSheet]
+ * immediately with basic data. Full availability/request-status details are fetched
+ * in the background by [SearchViewModel.fetchItemStatus] and update the sheet once ready.
+ * The sheet's [isRequesting] flag covers both the background status fetch and the
+ * in-flight request submission so the button is disabled during both.
+ */
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
@@ -83,6 +101,10 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     }
 }
 
+/**
+ * Search input field with a leading search icon, an in-progress spinner, and a
+ * clear button. The spinner replaces the clear button while a search is running.
+ */
 @Composable
 private fun SearchBar(query: String, onQueryChange: (String) -> Unit, isLoading: Boolean) {
     OutlinedTextField(
@@ -106,6 +128,10 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit, isLoading:
     )
 }
 
+/**
+ * Horizontal row of [FilterChip]s that let the user restrict results to
+ * All, Movies only, or TV only. Selection is mutually exclusive.
+ */
 @Composable
 private fun FilterRow(selected: SearchFilter, onSelect: (SearchFilter) -> Unit) {
     Row(

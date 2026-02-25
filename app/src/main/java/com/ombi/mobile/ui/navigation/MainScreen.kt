@@ -20,6 +20,18 @@ import com.ombi.mobile.ui.screens.requests.RequestsScreen
 import com.ombi.mobile.ui.screens.search.SearchScreen
 import com.ombi.mobile.ui.screens.settings.SettingsScreen
 
+/**
+ * The main app shell shown after a successful login.
+ *
+ * Renders a [Scaffold] with a [NavigationBar] at the bottom and a [NavHost]
+ * for the four primary destinations: Home, Search, Requests, and Settings.
+ *
+ * Navigation behaviour:
+ * - Each tab saves and restores its scroll/back-stack state when switching tabs.
+ * - Tapping the current tab pops back to its start destination (single-top).
+ * - [onLogout] is threaded down to [SettingsScreen] so a sign-out can navigate
+ *   back to the login screen, which is managed by the outer [OmbiNavGraph].
+ */
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
     val navController = rememberNavController()
@@ -38,6 +50,8 @@ fun MainScreen(onLogout: () -> Unit) {
                         } == true,
                         onClick = {
                             navController.navigate(item.screen.route) {
+                                // Pop up to the start destination so the back-stack
+                                // doesn't grow unbounded when switching tabs
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -55,8 +69,8 @@ fun MainScreen(onLogout: () -> Unit) {
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) { HomeScreen() }
-            composable(Screen.Search.route) { SearchScreen() }
+            composable(Screen.Home.route)     { HomeScreen() }
+            composable(Screen.Search.route)   { SearchScreen() }
             composable(Screen.Requests.route) { RequestsScreen() }
             composable(Screen.Settings.route) { SettingsScreen(onLogout = onLogout) }
         }

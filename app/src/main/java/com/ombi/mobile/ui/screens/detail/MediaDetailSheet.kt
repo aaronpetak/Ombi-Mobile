@@ -17,6 +17,24 @@ import coil.compose.AsyncImage
 import com.ombi.mobile.ui.components.toTmdbUrl
 import com.ombi.mobile.ui.model.MediaItem
 
+/**
+ * Modal bottom sheet displaying detail for a single [MediaItem].
+ *
+ * Sheet always expands to full height ([skipPartiallyExpanded] = true).
+ *
+ * Content (top to bottom):
+ * - Poster thumbnail (w342) + title, year chip, media-type chip, rating, [StatusChip]
+ * - Overview paragraph (hidden if blank)
+ * - Request button — disabled when the item is already available / requested / approved / denied,
+ *   or when [isRequesting] is true (covers both status-fetch and submission in-flight states)
+ * - [requestMessage] shown below the button in primary colour for success or error colour for failure
+ *
+ * @param item The media item to display.
+ * @param onDismiss Called when the user swipes down or taps the scrim.
+ * @param onRequest Called when the "Request" button is tapped.
+ * @param isRequesting True while a network call (status fetch or request submit) is in progress.
+ * @param requestMessage Feedback message shown after a request attempt.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailSheet(
@@ -123,6 +141,18 @@ fun MediaDetailSheet(
     }
 }
 
+/**
+ * Coloured badge showing the request/availability status of a media item.
+ *
+ * Colour mapping:
+ * - Green  → Available (on Plex/media server)
+ * - Red    → Denied by an admin
+ * - Orange → Processing (approved; download in progress)
+ * - Blue   → Requested (pending admin approval)
+ *
+ * Returns without rendering anything when none of the above flags are set
+ * (item has never been requested).
+ */
 @Composable
 private fun StatusChip(item: MediaItem) {
     val (label, color) = when {

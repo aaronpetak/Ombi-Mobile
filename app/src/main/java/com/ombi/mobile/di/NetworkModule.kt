@@ -17,6 +17,18 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
+/**
+ * Hilt module that provides the singleton network stack.
+ *
+ * Key design decisions:
+ * - **Dynamic base URL**: Retrofit is initialised with a placeholder (`http://localhost/`).
+ *   `dynamicUrlInterceptor` rewrites the host/port on every request using the value stored
+ *   in [UserPreferences], so the user can change the server URL without restarting the app.
+ * - **Auth injection**: `authInterceptor` adds the `Authorization: Bearer <token>` header
+ *   to every request automatically; individual call sites need no manual header handling.
+ * - **Moshi + KotlinJsonAdapterFactory**: Enables reflection-based adapters for data classes
+ *   that don't have `@JsonClass(generateAdapter = true)`, and supports nullable Kotlin types.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {

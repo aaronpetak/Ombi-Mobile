@@ -19,6 +19,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+/**
+ * Login screen with username and password fields.
+ *
+ * The password field is optional — some Ombi accounts have no password configured.
+ * The "Show/Hide" toggle reveals the password in plain text.
+ * Pressing IME Done on the password field or tapping "Sign In" triggers authentication.
+ *
+ * [onLoginSuccess] navigates to [MainScreen]; [onConfigureServer] returns to
+ * [ServerSetupScreen] so the user can point the app at a different Ombi instance.
+ */
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,

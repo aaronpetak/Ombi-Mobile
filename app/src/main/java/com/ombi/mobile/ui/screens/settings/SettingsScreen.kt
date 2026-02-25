@@ -30,6 +30,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
+/**
+ * Settings screen with account info, appearance controls, and a sign-out action.
+ *
+ * Sections:
+ * - **Account** — displays the logged-in username and current server URL (read-only).
+ * - **Appearance** — radio-button list to choose System default / Dark / Light theme.
+ *   The selected value is persisted immediately and applied app-wide without restart.
+ * - **Sign Out** — tapping prompts a confirmation [AlertDialog]; confirming calls
+ *   [SettingsViewModel.logout], which clears credentials and triggers [onLogout].
+ */
 @Composable
 fun SettingsScreen(
     onLogout: () -> Unit,
@@ -115,6 +125,7 @@ fun SettingsScreen(
     }
 }
 
+/** Small coloured section label used to group related settings rows. */
 @Composable
 private fun SettingsSectionHeader(title: String) {
     Text(

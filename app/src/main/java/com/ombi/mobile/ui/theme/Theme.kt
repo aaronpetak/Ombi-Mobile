@@ -22,6 +22,18 @@ private val LightColorScheme = lightColorScheme(
     tertiary = Pink40
 )
 
+/**
+ * Root Material 3 theme for the Ombi app.
+ *
+ * Colour-scheme priority:
+ * 1. **Dynamic colour** (Android 12+ / Material You) — wallpaper-derived palette
+ *    when [dynamicColor] is true and the device runs API 31+.
+ * 2. **Static dark scheme** ([DarkColorScheme]) when [darkTheme] is true.
+ * 3. **Static light scheme** ([LightColorScheme]) as the fallback.
+ *
+ * [darkTheme] is driven by the user's in-app theme preference resolved in
+ * [com.ombi.mobile.MainActivity] from [com.ombi.mobile.data.preferences.UserPreferences].
+ */
 @Composable
 fun OmbiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

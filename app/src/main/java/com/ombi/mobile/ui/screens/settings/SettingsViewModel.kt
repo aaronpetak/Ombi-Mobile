@@ -10,6 +10,14 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * UI state for the Settings screen.
+ *
+ * @param serverUrl The currently configured Ombi server URL.
+ * @param username The logged-in username retrieved from [AuthManager].
+ * @param theme Active theme preference: "system", "dark", or "light".
+ * @param isLoading Reserved for future async operations.
+ */
 data class SettingsUiState(
     val serverUrl: String = "",
     val username: String? = null,
@@ -17,6 +25,16 @@ data class SettingsUiState(
     val isLoading: Boolean = false
 )
 
+/**
+ * ViewModel for the Settings screen.
+ *
+ * [uiState] is derived reactively by combining the [serverUrl] and [theme] DataStore
+ * flows. The username is read synchronously from [AuthRepository] (via [AuthManager])
+ * since it was already stored at login time and does not change during a session.
+ *
+ * Theme changes are persisted immediately via [UserPreferences.setTheme] and observed
+ * in [MainActivity] to apply the correct [OmbiTheme] variant without restarting the app.
+ */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
@@ -45,10 +63,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** Persists the selected theme ("system", "dark", or "light") to DataStore. */
     fun setTheme(theme: String) {
         viewModelScope.launch { userPreferences.setTheme(theme) }
     }
 
+    /** Clears the stored token and username, then invokes [onLogout] to navigate to Login. */
     fun logout(onLogout: () -> Unit) {
         authRepository.logout()
         onLogout()

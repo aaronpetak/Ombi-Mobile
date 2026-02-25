@@ -12,6 +12,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+/**
+ * First-launch screen that collects the user's Ombi server URL.
+ *
+ * Shown when no server URL is stored in [com.ombi.mobile.data.preferences.UserPreferences].
+ * The URL is validated (must include a scheme) before being saved; the keyboard's
+ * Done action and the "Connect" button both trigger [ServerSetupViewModel.save].
+ *
+ * On success, [onSetupComplete] navigates to the Login screen.
+ */
 @Composable
 fun ServerSetupScreen(
     onSetupComplete: () -> Unit,

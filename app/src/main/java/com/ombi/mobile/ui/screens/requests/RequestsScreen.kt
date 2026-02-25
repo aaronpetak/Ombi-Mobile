@@ -19,6 +19,20 @@ import coil.compose.AsyncImage
 import com.ombi.mobile.data.api.models.TvRequest
 import com.ombi.mobile.ui.components.toTmdbUrl
 
+/**
+ * Requests screen showing the current user's movie and TV requests.
+ *
+ * Layout:
+ * - Primary [TabRow]: Movies / TV
+ * - Secondary [SecondaryTabRow]: Pending / Processed (with live counts)
+ * - [PullToRefreshBox] wrapping a generic [RequestList]
+ *
+ * The delete icon is only shown when [RequestsUiState.isAdmin] is true AND the
+ * Pending tab is selected — admin-only, can't undo a fulfilled request anyway.
+ *
+ * TV cancellation passes the parent request ID (not the child/season ID) because
+ * the Ombi DELETE endpoint expects the parent. See [RequestsViewModel.cancelTvRequest].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
@@ -97,6 +111,10 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
     }
 }
 
+/**
+ * Maps a [TvRequest] to a human-readable status string.
+ * Priority order: Available > Denied > Processing (approved, not yet available) > Pending.
+ */
 private fun tvStatusLabel(request: TvRequest): String = when {
     request.available -> "Available"
     request.denied == true -> "Denied"
@@ -104,6 +122,23 @@ private fun tvStatusLabel(request: TvRequest): String = when {
     else -> "Pending"
 }
 
+/**
+ * Generic, type-safe list of request items.
+ *
+ * Handles three states: initial loading spinner, empty-state message, and the
+ * scrollable list. Typed with [T] so the same composable serves both
+ * [MovieRequest] and [TvRequest] without duplication.
+ *
+ * @param isLoading True while the first load is in progress.
+ * @param emptyMessage Message to display when [items] is empty and not loading.
+ * @param items The visible request list (already filtered by the active tab/status).
+ * @param key Stable identity key for [LazyColumn] item reuse.
+ * @param title Extracts the display title from an item.
+ * @param posterPath Extracts the relative TMDB poster path from an item.
+ * @param statusLabel Extracts the status string from an item.
+ * @param canCancel Whether to show the delete icon (admin + pending tab).
+ * @param onCancel Callback invoked when the delete icon is tapped.
+ */
 @Composable
 private fun <T> RequestList(
     isLoading: Boolean,
@@ -141,6 +176,18 @@ private fun <T> RequestList(
     }
 }
 
+/**
+ * A single row in the request list.
+ *
+ * Shows a small poster thumbnail, title, colour-coded status label, and — when
+ * [canCancel] is true — a red delete icon button at the trailing edge.
+ *
+ * Status colours:
+ * - Green   → Available
+ * - Red     → Denied
+ * - Orange  → Processing (approved but not yet available)
+ * - Grey    → Pending (default)
+ */
 @Composable
 private fun RequestListItem(
     title: String,
