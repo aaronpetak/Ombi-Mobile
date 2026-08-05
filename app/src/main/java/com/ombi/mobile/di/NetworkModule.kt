@@ -1,5 +1,6 @@
 package com.ombi.mobile.di
 
+import com.ombi.mobile.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -76,11 +77,7 @@ object NetworkModule {
             }
         }
 
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-        }
-
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             // Guard against a stalled or unreachable server hanging the app indefinitely.
             // OkHttp's default per-byte read timeout does not protect against a server that
             // streams headers then stalls the body, so callTimeout bounds the whole call.
@@ -89,8 +86,16 @@ object NetworkModule {
             .callTimeout(45, TimeUnit.SECONDS)
             .addInterceptor(dynamicUrlInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .build()
+
+        // Only log in debug builds — Level.BASIC logs request URLs (including search
+        // terms), which are readable by other apps holding READ_LOGS on older devices.
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+            )
+        }
+
+        return builder.build()
     }
 
     @Provides
