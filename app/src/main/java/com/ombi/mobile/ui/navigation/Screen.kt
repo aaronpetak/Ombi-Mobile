@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
  *   inner [MainScreen] bottom navigation host.
  */
 sealed class Screen(val route: String) {
+    // Transient start destination shown while the saved server URL is read
+    // asynchronously; navigation moves off it on the first emission.
+    object Loading : Screen("loading")
+
     // Auth flow
     object ServerSetup : Screen("server_setup")
     object Login       : Screen("login")
