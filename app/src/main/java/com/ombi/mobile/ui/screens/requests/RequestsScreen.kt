@@ -102,7 +102,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     key = { it.id },
                     title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
                     posterPath = { it.posterPath },
-                    statusLabel = { tvStatusLabel(it) },
+                    statusLabel = { it.statusLabel },
                     // Cancellation targets the parent request ID; without it the DELETE
                     // would hit the wrong (child) ID, so hide the button in that case.
                     canCancel = { canCancel && it.parentRequest?.id != null },
@@ -113,17 +113,6 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
             }
         }
     }
-}
-
-/**
- * Maps a [TvRequest] to a human-readable status string.
- * Priority order: Available > Denied > Processing (approved, not yet available) > Pending.
- */
-private fun tvStatusLabel(request: TvRequest): String = when {
-    request.available -> "Available"
-    request.denied == true -> "Denied"
-    request.approved -> "Processing"
-    else -> "Pending"
 }
 
 /**

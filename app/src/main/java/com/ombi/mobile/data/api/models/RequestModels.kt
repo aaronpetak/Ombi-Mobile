@@ -133,6 +133,17 @@ data class TvRequest(
 ) {
     /** Poster path sourced from the parent request (where images actually live). */
     val posterPath: String? get() = parentRequest?.posterPath ?: parentRequest?.background
+
+    /**
+     * Human-readable status string derived from the request's boolean flags.
+     * Priority: Available > Denied > Processing (approved, not yet available) > Pending.
+     */
+    val statusLabel: String get() = when {
+        available      -> "Available"
+        denied == true -> "Denied"
+        approved       -> "Processing"
+        else           -> "Pending"
+    }
 }
 
 /**
