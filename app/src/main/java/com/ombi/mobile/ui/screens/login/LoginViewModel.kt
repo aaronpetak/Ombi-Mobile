@@ -59,7 +59,13 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = state.copy(isLoading = true, error = null)
             authRepository.loginWithCredentials(state.username, state.password)
-                .onSuccess { onSuccess() }
+                .onSuccess {
+                    // Reset isLoading before navigating so that if onSuccess() throws
+                    // (e.g. NavController already destroyed after a config change) the
+                    // login button is not left permanently disabled.
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onSuccess()
+                }
                 .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
         }
     }
