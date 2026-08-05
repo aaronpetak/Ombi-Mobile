@@ -7,6 +7,10 @@ import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -50,6 +54,22 @@ class AuthManager @Inject constructor(
     @Volatile
     var secureStorageAvailable: Boolean = true
         private set
+
+    // Session-end signal. replay = 0 deliberately: the only collector lives at
+    // the nav-graph root and is always active before any authenticated request
+    // (hence any possible 401) can fire, so nothing is missed. Replaying would
+    // be actively harmful — a retained LOGGED_OUT would re-fire on the next
+    // collector (e.g. after a rotation following re-login) and bounce a
+    // logged-in user back to Login. extraBufferCapacity keeps tryEmit non-
+    // suspending from the interceptor thread.
+    private val _sessionEvents = MutableSharedFlow<SessionEvent>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    /** Emits whenever the session ends (explicit logout or a 401 from the server). */
+    val sessionEvents: SharedFlow<SessionEvent> = _sessionEvents.asSharedFlow()
 
     private val prefs: SharedPreferences = buildPrefs()
 
@@ -132,8 +152,24 @@ class AuthManager @Inject constructor(
     /**
      * Clears all stored credentials, effectively signing the user out.
      * After this call [getToken] and [getUsername] will return null.
+     *
+     * This only touches storage; it does not emit a [SessionEvent]. Use
+     * [endSession] to also notify the UI to navigate back to login.
      */
     fun clearToken() {
         prefs.edit { clear() }
+    }
+
+    /**
+     * Ends the current session: clears stored credentials and emits [reason]
+     * on [sessionEvents] so the UI can navigate back to the login screen.
+     *
+     * Safe to call from any thread, including the OkHttp interceptor thread.
+     * Uses [MutableSharedFlow.tryEmit], which never suspends and cannot fail
+     * given this flow's buffer configuration.
+     */
+    fun endSession(reason: SessionEvent) {
+        clearToken()
+        _sessionEvents.tryEmit(reason)
     }
 }

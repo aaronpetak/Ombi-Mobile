@@ -9,6 +9,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import com.ombi.mobile.data.api.OmbiApiService
 import com.ombi.mobile.data.auth.AuthManager
+import com.ombi.mobile.data.auth.SessionEvent
 import com.ombi.mobile.data.preferences.UserPreferences
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
@@ -48,17 +49,26 @@ object NetworkModule {
         authManager: AuthManager,
         userPreferences: UserPreferences
     ): OkHttpClient {
-        // Attach Bearer token to every request
+        // Attach Bearer token to every request, and treat a 401 on an
+        // authenticated request as an expired/revoked session.
         val authInterceptor = Interceptor { chain ->
             val token = authManager.getToken()
-            val request = if (!token.isNullOrBlank()) {
+            val hadToken = !token.isNullOrBlank()
+            val request = if (hadToken) {
                 chain.request().newBuilder()
                     .addHeader("Authorization", "Bearer $token")
                     .build()
             } else {
                 chain.request()
             }
-            chain.proceed(request)
+            val response = chain.proceed(request)
+            // A 401 only means "session over" if we actually sent a token. The
+            // login call carries none, so its 401 (bad credentials) is left for
+            // the caller to surface rather than ending a session that never began.
+            if (response.code == 401 && hadToken) {
+                authManager.endSession(SessionEvent.EXPIRED)
+            }
+            response
         }
 
         // Rewrite the host/port to the user-configured server URL on every request.

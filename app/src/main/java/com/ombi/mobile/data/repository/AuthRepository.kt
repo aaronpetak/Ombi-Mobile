@@ -3,6 +3,8 @@ package com.ombi.mobile.data.repository
 import com.ombi.mobile.data.api.OmbiApiService
 import com.ombi.mobile.data.api.models.UserAuthRequest
 import com.ombi.mobile.data.auth.AuthManager
+import com.ombi.mobile.data.auth.SessionEvent
+import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,6 +22,13 @@ class AuthRepository @Inject constructor(
 ) {
     /** The username stored from the most recent successful login, or null if signed out. */
     val username: String? get() = authManager.getUsername()
+
+    /**
+     * Emits whenever the session ends — either an explicit [logout] or a 401
+     * from the server (expired/revoked token). The UI collects this to navigate
+     * back to the login screen from a single place.
+     */
+    val sessionEvents: SharedFlow<SessionEvent> get() = authManager.sessionEvents
 
     /**
      * Authenticates with an Ombi local account (username + password).

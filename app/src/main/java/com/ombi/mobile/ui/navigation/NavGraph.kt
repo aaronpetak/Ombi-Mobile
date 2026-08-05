@@ -12,12 +12,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ombi.mobile.data.preferences.UserPreferences
+import com.ombi.mobile.data.repository.AuthRepository
 import com.ombi.mobile.ui.screens.login.LoginScreen
 import com.ombi.mobile.ui.screens.serversetup.ServerSetupScreen
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Root navigation graph for the entire application.
@@ -39,13 +42,34 @@ import com.ombi.mobile.ui.screens.serversetup.ServerSetupScreen
  *
  * Each step pops itself off the back-stack so Back cannot return to a
  * previous auth screen.
+ *
+ * A single [AuthRepository.sessionEvents] collector is the sole authority for
+ * navigating back to Login when a session ends — whether from an explicit
+ * logout or a 401 (expired/revoked token). Routing both through here tears down
+ * the [MainScreen] and its child ViewModels, cancelling any in-flight requests.
  */
 @Composable
-fun OmbiNavGraph(userPreferences: UserPreferences) {
+fun OmbiNavGraph(
+    userPreferences: UserPreferences,
+    authRepository: AuthRepository
+) {
     val navController = rememberNavController()
 
     // Read the saved server URL reactively; null = not yet loaded.
     val serverUrl by userPreferences.serverUrl.collectAsStateWithLifecycle(initialValue = null)
+
+    // Single source of truth for session-end navigation. On logout or a 401,
+    // pop the entire back-stack and land on Login. Popping up to the graph's
+    // start destination destroys MainScreen, cancelling its ViewModels'
+    // viewModelScope coroutines so no optimistic write lands after sign-out.
+    LaunchedEffect(Unit) {
+        authRepository.sessionEvents.collectLatest {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     // Route off the Loading screen exactly once, on the first non-null emission.
     // No server URL saved → setup; otherwise login (token validity is checked
