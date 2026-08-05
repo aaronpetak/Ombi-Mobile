@@ -92,7 +92,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     title = { it.title ?: "Unknown" },
                     posterPath = { it.posterPath },
                     statusLabel = { it.statusLabel },
-                    canCancel = canCancel,
+                    canCancel = { canCancel },
                     onCancel = { viewModel.cancelMovieRequest(it.id) }
                 )
                 RequestTab.TV -> RequestList(
@@ -103,8 +103,12 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
                     posterPath = { it.posterPath },
                     statusLabel = { tvStatusLabel(it) },
-                    canCancel = canCancel,
-                    onCancel = { viewModel.cancelTvRequest(it.parentRequest?.id ?: it.id) }
+                    // Cancellation targets the parent request ID; without it the DELETE
+                    // would hit the wrong (child) ID, so hide the button in that case.
+                    canCancel = { canCancel && it.parentRequest?.id != null },
+                    onCancel = { request ->
+                        request.parentRequest?.id?.let { parentId -> viewModel.cancelTvRequest(parentId) }
+                    }
                 )
             }
         }
@@ -136,7 +140,8 @@ private fun tvStatusLabel(request: TvRequest): String = when {
  * @param title Extracts the display title from an item.
  * @param posterPath Extracts the relative TMDB poster path from an item.
  * @param statusLabel Extracts the status string from an item.
- * @param canCancel Whether to show the delete icon (admin + pending tab).
+ * @param canCancel Per-item predicate: whether to show the delete icon for a
+ *   given item (admin + pending tab, and for TV a non-null parent request).
  * @param onCancel Callback invoked when the delete icon is tapped.
  */
 @Composable
@@ -148,7 +153,7 @@ private fun <T> RequestList(
     title: (T) -> String,
     posterPath: (T) -> String?,
     statusLabel: (T) -> String,
-    canCancel: Boolean,
+    canCancel: (T) -> Boolean,
     onCancel: (T) -> Unit
 ) {
     if (isLoading && items.isEmpty()) {
@@ -169,7 +174,7 @@ private fun <T> RequestList(
                 title = title(item),
                 posterPath = posterPath(item),
                 statusLabel = statusLabel(item),
-                canCancel = canCancel,
+                canCancel = canCancel(item),
                 onCancel = { onCancel(item) }
             )
         }
