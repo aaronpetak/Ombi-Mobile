@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Legacy Auto Backup rules for Android 11 and below (minSdk 29). Excludes the
+  DataStore preferences file, which holds the plaintext Ombi server URL, from
+  cloud backup. Android 12+ uses data_extraction_rules.xml instead.
+-->
+<full-backup-content>
+    <exclude domain="file" path="datastore/" />
+</full-backup-content>

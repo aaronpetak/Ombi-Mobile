@@ -1,5 +1,7 @@
 package com.ombi.mobile.data.repository
 
+import android.util.Log
+import com.ombi.mobile.BuildConfig
 import com.ombi.mobile.data.api.OmbiApiService
 import com.ombi.mobile.data.api.models.*
 import retrofit2.Response
@@ -163,21 +165,39 @@ class OmbiRepository @Inject constructor(
     }
 }
 
+private const val TAG = "OmbiRepository"
+
 /**
  * Helper extension for Retrofit [Response] objects.
  *
- * Returns the response body on success, or throws an [Exception] with the
- * HTTP status code and up to 300 characters of the error body text.
- * This prevents silent NullPointerExceptions from `.body()!!` calls and
- * ensures error messages are propagated meaningfully through [Result].
+ * Returns the response body on success, or throws an [Exception] whose message
+ * is safe to show the user: a short, human-readable description derived solely
+ * from the HTTP status code. Raw error bodies (which may be HTML error pages,
+ * server stack traces, or reverse-proxy diagnostics) are never surfaced to the
+ * UI; the full body is logged only in debug builds to aid troubleshooting.
+ *
+ * This prevents silent NullPointerExceptions from `.body()!!` calls while
+ * ensuring only sanitized messages propagate through [Result].
  */
 private fun <T> Response<T>.requireBody(): T {
     if (isSuccessful) {
         return body() ?: throw Exception("Empty response body (HTTP ${code()})")
     }
-    val errText = errorBody()?.string()?.take(300)?.trim()
-    throw Exception(
-        if (!errText.isNullOrBlank()) "HTTP ${code()}: $errText"
-        else "HTTP ${code()}"
-    )
+    if (BuildConfig.DEBUG) {
+        // Full body only in debug — never in the exception message the UI shows.
+        val raw = errorBody()?.string()?.take(1000)?.trim()
+        Log.d(TAG, "HTTP ${code()} error body: ${raw.orEmpty()}")
+    }
+    throw Exception(userMessageForStatus(code()))
+}
+
+/**
+ * Maps an HTTP status code to a short, user-appropriate message. Avoids leaking
+ * raw server output while still telling the user what kind of failure occurred.
+ */
+private fun userMessageForStatus(code: Int): String = when (code) {
+    401, 403 -> "You don't have permission to do that. Please sign in again."
+    404      -> "Not found on the server."
+    in 500..599 -> "The Ombi server had a problem (HTTP $code). Try again later."
+    else     -> "Request failed (HTTP $code)."
 }
