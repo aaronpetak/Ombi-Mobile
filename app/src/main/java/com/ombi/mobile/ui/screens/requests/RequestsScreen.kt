@@ -39,6 +39,18 @@ import com.ombi.mobile.ui.components.toTmdbUrl
 fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Memoize the pending/processed splits so the filtering runs only when the
+    // underlying request lists change, not on every recomposition (the secondary
+    // tab labels and the list body would otherwise each re-filter every frame).
+    // The predicate stays single-sourced on RequestsUiState (and unit-tested);
+    // remember only caches the read.
+    val pendingMovies   = remember(uiState.movieRequests) { uiState.pendingMovies }
+    val processedMovies = remember(uiState.movieRequests) { uiState.processedMovies }
+    val pendingTv       = remember(uiState.tvRequests)    { uiState.pendingTv }
+    val processedTv     = remember(uiState.tvRequests)    { uiState.processedTv }
+    val visibleMovies   = if (uiState.selectedStatus == StatusTab.PENDING) pendingMovies else processedMovies
+    val visibleTv       = if (uiState.selectedStatus == StatusTab.PENDING) pendingTv else processedTv
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             "My Requests",
@@ -69,8 +81,8 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                             StatusTab.PROCESSED -> "Processed"
                         }
                         val count = when (status) {
-                            StatusTab.PENDING -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.pendingMovies.size else uiState.pendingTv.size
-                            StatusTab.PROCESSED -> if (uiState.selectedTab == RequestTab.MOVIES) uiState.processedMovies.size else uiState.processedTv.size
+                            StatusTab.PENDING -> if (uiState.selectedTab == RequestTab.MOVIES) pendingMovies.size else pendingTv.size
+                            StatusTab.PROCESSED -> if (uiState.selectedTab == RequestTab.MOVIES) processedMovies.size else processedTv.size
                         }
                         Text("$label ($count)")
                     }
@@ -88,7 +100,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                 RequestTab.MOVIES -> RequestList(
                     isLoading = uiState.isLoading,
                     emptyMessage = if (canCancel) "No pending movie requests" else "No completed movie requests",
-                    items = uiState.visibleMovies,
+                    items = visibleMovies,
                     key = { it.id },
                     title = { it.title ?: "Unknown" },
                     posterPath = { it.posterPath },
@@ -99,7 +111,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                 RequestTab.TV -> RequestList(
                     isLoading = uiState.isLoading,
                     emptyMessage = if (canCancel) "No pending TV requests" else "No completed TV requests",
-                    items = uiState.visibleTv,
+                    items = visibleTv,
                     key = { it.id },
                     title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
                     posterPath = { it.posterPath },
