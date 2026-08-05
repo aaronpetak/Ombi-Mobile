@@ -15,6 +15,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 /**
@@ -80,6 +81,12 @@ object NetworkModule {
         }
 
         return OkHttpClient.Builder()
+            // Guard against a stalled or unreachable server hanging the app indefinitely.
+            // OkHttp's default per-byte read timeout does not protect against a server that
+            // streams headers then stalls the body, so callTimeout bounds the whole call.
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(45, TimeUnit.SECONDS)
             .addInterceptor(dynamicUrlInterceptor)
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
