@@ -68,10 +68,16 @@ object NetworkModule {
             if (parsed == null) {
                 chain.proceed(chain.request())
             } else {
-                val newUrl = chain.request().url.newBuilder()
+                // Prepend any path prefix from the configured URL (e.g. a reverse-proxy
+                // subpath like "/ombi") so requests route to <host>/ombi/api/... rather
+                // than dropping the prefix and 404ing at <host>/api/...
+                val prefix = parsed.encodedPath.trimEnd('/')
+                val original = chain.request().url
+                val newUrl = original.newBuilder()
                     .scheme(parsed.scheme)
                     .host(parsed.host)
                     .port(parsed.port)
+                    .encodedPath(prefix + original.encodedPath)
                     .build()
                 chain.proceed(chain.request().newBuilder().url(newUrl).build())
             }
