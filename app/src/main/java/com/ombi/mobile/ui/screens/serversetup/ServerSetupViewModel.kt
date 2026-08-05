@@ -52,10 +52,19 @@ class ServerSetupViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
-            userPreferences.setServerUrl(url)
-            _uiState.value = _uiState.value.copy(isSaving = false)
-            onSuccess()
+            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
+            val saved = try {
+                userPreferences.setServerUrl(url)
+                true
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message ?: "Failed to save server URL")
+                false
+            } finally {
+                // Always reset isSaving so a failure cannot leave the Save button
+                // permanently disabled.
+                _uiState.value = _uiState.value.copy(isSaving = false)
+            }
+            if (saved) onSuccess()
         }
     }
 }
