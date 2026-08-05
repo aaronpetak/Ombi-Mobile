@@ -29,11 +29,11 @@ import com.ombi.mobile.ui.screens.settings.SettingsScreen
  * Navigation behaviour:
  * - Each tab saves and restores its scroll/back-stack state when switching tabs.
  * - Tapping the current tab pops back to its start destination (single-top).
- * - [onLogout] is threaded down to [SettingsScreen] so a sign-out can navigate
- *   back to the login screen, which is managed by the outer [OmbiNavGraph].
+ * - Sign-out navigation is handled by the outer [OmbiNavGraph]'s session-event
+ *   collector, not threaded through here.
  */
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -72,7 +72,7 @@ fun MainScreen(onLogout: () -> Unit) {
             composable(Screen.Home.route)     { HomeScreen() }
             composable(Screen.Search.route)   { SearchScreen() }
             composable(Screen.Requests.route) { RequestsScreen() }
-            composable(Screen.Settings.route) { SettingsScreen(onLogout = onLogout) }
+            composable(Screen.Settings.route) { SettingsScreen() }
         }
     }
 }

@@ -38,11 +38,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
  * - **Appearance** — radio-button list to choose System default / Dark / Light theme.
  *   The selected value is persisted immediately and applied app-wide without restart.
  * - **Sign Out** — tapping prompts a confirmation [AlertDialog]; confirming calls
- *   [SettingsViewModel.logout], which clears credentials and triggers [onLogout].
+ *   [SettingsViewModel.logout], which clears credentials. Navigation back to the
+ *   login screen is driven by the session-event collector in OmbiNavGraph.
  */
 @Composable
 fun SettingsScreen(
-    onLogout: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -113,7 +113,7 @@ fun SettingsScreen(
             text = { Text("Are you sure you want to sign out?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.logout(onLogout)
+                    viewModel.logout()
                 }) {
                     Text("Sign Out", color = MaterialTheme.colorScheme.error)
                 }

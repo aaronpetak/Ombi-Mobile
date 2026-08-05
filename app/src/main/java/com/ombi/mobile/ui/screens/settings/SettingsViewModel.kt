@@ -68,9 +68,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setTheme(theme) }
     }
 
-    /** Clears the stored token and username, then invokes [onLogout] to navigate to Login. */
-    fun logout(onLogout: () -> Unit) {
+    /**
+     * Signs the user out. Navigation back to Login is not handled here — it is
+     * driven by the [AuthRepository.sessionEvents] collector in OmbiNavGraph,
+     * which reacts to the LOGGED_OUT event this emits. Routing all session-end
+     * navigation through one place also cancels in-flight request coroutines
+     * when the main screen is torn down.
+     */
+    fun logout() {
         authRepository.logout()
-        onLogout()
     }
 }

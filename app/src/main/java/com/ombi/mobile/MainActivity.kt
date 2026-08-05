@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import dagger.hilt.android.AndroidEntryPoint
 import com.ombi.mobile.data.preferences.UserPreferences
+import com.ombi.mobile.data.repository.AuthRepository
 import com.ombi.mobile.ui.navigation.OmbiNavGraph
 import com.ombi.mobile.ui.theme.OmbiTheme
 import javax.inject.Inject
@@ -26,6 +27,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var userPreferences: UserPreferences
+    @Inject lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +42,10 @@ class MainActivity : ComponentActivity() {
                 else    -> isSystemInDarkTheme() // "system" — follow the OS setting
             }
             OmbiTheme(darkTheme = darkTheme) {
-                OmbiNavGraph(userPreferences = userPreferences)
+                OmbiNavGraph(
+                    userPreferences = userPreferences,
+                    authRepository = authRepository
+                )
             }
         }
     }
