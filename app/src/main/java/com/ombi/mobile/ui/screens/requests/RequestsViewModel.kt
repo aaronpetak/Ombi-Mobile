@@ -36,7 +36,9 @@ data class RequestsUiState(
     val selectedStatus: StatusTab          = StatusTab.PENDING,
     val isLoading:      Boolean            = false,
     val error:          String?            = null,
-    val isAdmin:        Boolean            = false
+    val isAdmin:        Boolean            = false,
+    /** Parent request IDs with an in-flight TV cancellation, to reject double-taps. */
+    val cancellingTvIds: Set<Int>          = emptySet()
 ) {
     // Pending = not yet available AND not denied
     val pendingMovies:   List<MovieRequest> get() = movieRequests.filter { !it.available && it.denied != true }
@@ -127,17 +129,29 @@ class RequestsViewModel @Inject constructor(
      *   NOT the child request's own id. The Ombi DELETE endpoint expects the parent ID.
      */
     fun cancelTvRequest(parentRequestId: Int) {
+        // Reject a second tap while a cancellation for this parent is already in flight;
+        // otherwise two coroutines read a stale list and can clobber each other's writes.
+        if (parentRequestId in _uiState.value.cancellingTvIds) return
+        _uiState.value = _uiState.value.copy(
+            cancellingTvIds = _uiState.value.cancellingTvIds + parentRequestId
+        )
         viewModelScope.launch {
-            repository.cancelTvRequest(parentRequestId)
-                .onSuccess {
-                    // Remove all child requests belonging to this parent
-                    _uiState.value = _uiState.value.copy(
-                        tvRequests = _uiState.value.tvRequests.filter {
-                            it.parentRequest?.id != parentRequestId
-                        }
-                    )
-                }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
+            try {
+                repository.cancelTvRequest(parentRequestId)
+                    .onSuccess {
+                        // Remove all child requests belonging to this parent
+                        _uiState.value = _uiState.value.copy(
+                            tvRequests = _uiState.value.tvRequests.filter {
+                                it.parentRequest?.id != parentRequestId
+                            }
+                        )
+                    }
+                    .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
+            } finally {
+                _uiState.value = _uiState.value.copy(
+                    cancellingTvIds = _uiState.value.cancellingTvIds - parentRequestId
+                )
+            }
         }
     }
 }
