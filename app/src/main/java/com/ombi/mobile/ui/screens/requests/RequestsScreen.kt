@@ -16,6 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.ombi.mobile.data.api.models.RequestStatus
 import com.ombi.mobile.data.api.models.TvRequest
 import com.ombi.mobile.ui.components.toTmdbUrl
 
@@ -91,7 +92,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     key = { it.id },
                     title = { it.title ?: "Unknown" },
                     posterPath = { it.posterPath },
-                    statusLabel = { it.statusLabel },
+                    status = { it.status },
                     canCancel = { canCancel },
                     onCancel = { viewModel.cancelMovieRequest(it.id) }
                 )
@@ -102,7 +103,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                     key = { it.id },
                     title = { it.title ?: it.parentRequest?.title ?: "Unknown" },
                     posterPath = { it.posterPath },
-                    statusLabel = { tvStatusLabel(it) },
+                    status = { it.status },
                     // Cancellation targets the parent request ID; without it the DELETE
                     // would hit the wrong (child) ID, so hide the button in that case.
                     canCancel = { canCancel && it.parentRequest?.id != null },
@@ -113,17 +114,6 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
             }
         }
     }
-}
-
-/**
- * Maps a [TvRequest] to a human-readable status string.
- * Priority order: Available > Denied > Processing (approved, not yet available) > Pending.
- */
-private fun tvStatusLabel(request: TvRequest): String = when {
-    request.available -> "Available"
-    request.denied == true -> "Denied"
-    request.approved -> "Processing"
-    else -> "Pending"
 }
 
 /**
@@ -139,7 +129,7 @@ private fun tvStatusLabel(request: TvRequest): String = when {
  * @param key Stable identity key for [LazyColumn] item reuse.
  * @param title Extracts the display title from an item.
  * @param posterPath Extracts the relative TMDB poster path from an item.
- * @param statusLabel Extracts the status string from an item.
+ * @param status Extracts the [RequestStatus] from an item.
  * @param canCancel Per-item predicate: whether to show the delete icon for a
  *   given item (admin + pending tab, and for TV a non-null parent request).
  * @param onCancel Callback invoked when the delete icon is tapped.
@@ -152,7 +142,7 @@ private fun <T> RequestList(
     key: (T) -> Any,
     title: (T) -> String,
     posterPath: (T) -> String?,
-    statusLabel: (T) -> String,
+    status: (T) -> RequestStatus,
     canCancel: (T) -> Boolean,
     onCancel: (T) -> Unit
 ) {
@@ -173,7 +163,7 @@ private fun <T> RequestList(
             RequestListItem(
                 title = title(item),
                 posterPath = posterPath(item),
-                statusLabel = statusLabel(item),
+                status = status(item),
                 canCancel = canCancel(item),
                 onCancel = { onCancel(item) }
             )
@@ -197,21 +187,23 @@ private fun <T> RequestList(
 private fun RequestListItem(
     title: String,
     posterPath: String?,
-    statusLabel: String,
+    status: RequestStatus,
     canCancel: Boolean,
     onCancel: () -> Unit
 ) {
-    val statusColor: Color = when (statusLabel) {
-        "Available"  -> Color(0xFF388E3C)
-        "Denied"     -> MaterialTheme.colorScheme.error
-        "Processing" -> Color(0xFFF57C00)
-        else         -> MaterialTheme.colorScheme.onSurfaceVariant
+    // Exhaustive over RequestStatus — adding a status is now a compile error
+    // here until a colour is chosen, rather than silently falling through.
+    val statusColor: Color = when (status) {
+        RequestStatus.AVAILABLE  -> Color(0xFF388E3C)
+        RequestStatus.DENIED     -> MaterialTheme.colorScheme.error
+        RequestStatus.PROCESSING -> Color(0xFFF57C00)
+        RequestStatus.PENDING    -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = {
-            Text(statusLabel, color = statusColor)
+            Text(status.label, color = statusColor)
         },
         leadingContent = {
             AsyncImage(

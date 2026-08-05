@@ -106,7 +106,7 @@ fun OmbiNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("main") {
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -116,7 +116,7 @@ fun OmbiNavGraph(
             )
         }
 
-        composable("main") {
+        composable(Screen.Main.route) {
             MainScreen()
         }
     }

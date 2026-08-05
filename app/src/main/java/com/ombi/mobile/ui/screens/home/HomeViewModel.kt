@@ -9,6 +9,7 @@ import com.ombi.mobile.data.api.models.SearchMovieViewModel
 import com.ombi.mobile.data.api.models.SearchTvShowViewModel
 import com.ombi.mobile.data.repository.OmbiRepository
 import com.ombi.mobile.ui.model.MediaItem
+import com.ombi.mobile.ui.model.toRequestOutcome
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -137,26 +138,20 @@ class HomeViewModel @Inject constructor(
                     ?: item.tvDbId?.let { repository.getTvByTvDbId(it).getOrNull()?.theMovieDbId }
                 tmdbId?.let { repository.requestTv(it) }
             }
-            result?.fold(
-                onSuccess = { engineResult ->
-                    val msg = if (engineResult.result) "Request submitted!" else "Failed: ${engineResult.errorMessage}"
-                    _uiState.value = _uiState.value.copy(
-                        isRequesting  = false,
-                        requestMessage = msg,
-                        // Optimistically mark the item as requested so the button updates immediately
-                        selectedItem  = if (engineResult.result) item.copy(requested = true) else item
-                    )
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(
-                        isRequesting  = false,
-                        requestMessage = "Error: ${it.message}"
-                    )
+            // Shared message + optimistic-requested mapping (see toRequestOutcome).
+            // Only rewrite selectedItem on a successful call, matching the
+            // original: a failed/unresolved request must not clobber a sheet the
+            // user may have dismissed meanwhile.
+            val outcome = result.toRequestOutcome()
+            _uiState.value = _uiState.value.copy(
+                isRequesting   = false,
+                requestMessage = outcome.message,
+                selectedItem   = if (outcome.isSuccess) {
+                    if (outcome.markRequested) item.copy(requested = true) else item
+                } else {
+                    _uiState.value.selectedItem
                 }
-            ) ?: run {
-                // result is null when neither theMovieDbId nor tvDbId could be resolved
-                _uiState.value = _uiState.value.copy(isRequesting = false, requestMessage = "Missing ID for request")
-            }
+            )
         }
     }
 }

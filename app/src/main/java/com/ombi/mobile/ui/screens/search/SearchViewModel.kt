@@ -7,6 +7,7 @@ import com.ombi.mobile.data.api.models.MultiSearchResult
 import com.ombi.mobile.data.repository.OmbiRepository
 import com.ombi.mobile.ui.model.MediaItem
 import com.ombi.mobile.ui.model.toMediaItem
+import com.ombi.mobile.ui.model.toRequestOutcome
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -164,24 +165,20 @@ class SearchViewModel @Inject constructor(
             } else {
                 item.theMovieDbId?.let { repository.requestTv(it) }
             }
-            result?.fold(
-                onSuccess = { engineResult ->
-                    val msg = if (engineResult.result) "Request submitted!" else "Failed: ${engineResult.errorMessage}"
-                    _uiState.value = _uiState.value.copy(
-                        isRequesting   = false,
-                        requestMessage = msg,
-                        selectedItem   = if (engineResult.result) item.copy(requested = true) else item
-                    )
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(
-                        isRequesting   = false,
-                        requestMessage = "Error: ${it.message}"
-                    )
+            // Shared message + optimistic-requested mapping (see toRequestOutcome).
+            // Only rewrite selectedItem on a successful call, matching the
+            // original: a failed/unresolved request must not overwrite an item
+            // that fetchItemStatus may have enriched in the meantime.
+            val outcome = result.toRequestOutcome()
+            _uiState.value = _uiState.value.copy(
+                isRequesting   = false,
+                requestMessage = outcome.message,
+                selectedItem   = if (outcome.isSuccess) {
+                    if (outcome.markRequested) item.copy(requested = true) else item
+                } else {
+                    _uiState.value.selectedItem
                 }
-            ) ?: run {
-                _uiState.value = _uiState.value.copy(isRequesting = false, requestMessage = "Missing ID for request")
-            }
+            )
         }
     }
 

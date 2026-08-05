@@ -81,8 +81,8 @@ data class RequestsViewModel<T>(
 /**
  * A single movie request as returned by GET /api/v2/requests/movie.
  *
- * [statusLabel] is a convenience computed property for displaying the request
- * status in the UI without a series of null checks at the call site.
+ * [status] is a convenience computed property exposing the derived
+ * [RequestStatus] for the UI without a series of null checks at the call site.
  */
 @JsonClass(generateAdapter = true)
 data class MovieRequest(
@@ -98,13 +98,8 @@ data class MovieRequest(
     @Json(name = "requestedDate") val requestedDate: String?,
     @Json(name = "requestedUser") val requestedUser: RequestedUser?
 ) {
-    /** Human-readable status string derived from the request's boolean flags. */
-    val statusLabel: String get() = when {
-        available      -> "Available"
-        denied == true -> "Denied"
-        approved       -> "Processing"
-        else           -> "Pending"
-    }
+    /** Display status derived from the request's boolean flags. */
+    val status: RequestStatus get() = RequestStatus.from(available, denied, approved)
 }
 
 /**
@@ -133,6 +128,9 @@ data class TvRequest(
 ) {
     /** Poster path sourced from the parent request (where images actually live). */
     val posterPath: String? get() = parentRequest?.posterPath ?: parentRequest?.background
+
+    /** Display status derived from the request's boolean flags. */
+    val status: RequestStatus get() = RequestStatus.from(available, denied, approved)
 }
 
 /**
