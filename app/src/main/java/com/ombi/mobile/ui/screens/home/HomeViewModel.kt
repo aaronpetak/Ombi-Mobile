@@ -63,39 +63,45 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            // Fan-out: all five requests run in parallel
-            val recentMovies   = async { repository.getRecentlyAddedMovies() }
-            val recentTv       = async { repository.getRecentlyAddedTv() }
-            val popularMovies  = async { repository.getPopularMovies() }
-            val trendingTv     = async { repository.getTrendingTv() }
-            val upcomingMovies = async { repository.getUpcomingMovies() }
+            try {
+                // Fan-out: all five requests run in parallel
+                val recentMovies   = async { repository.getRecentlyAddedMovies() }
+                val recentTv       = async { repository.getRecentlyAddedTv() }
+                val popularMovies  = async { repository.getPopularMovies() }
+                val trendingTv     = async { repository.getTrendingTv() }
+                val upcomingMovies = async { repository.getUpcomingMovies() }
 
-            val recentMoviesResult   = recentMovies.await()
-            val recentTvResult       = recentTv.await()
-            val popularMoviesResult  = popularMovies.await()
-            val trendingTvResult     = trendingTv.await()
-            val upcomingMoviesResult = upcomingMovies.await()
+                val recentMoviesResult   = recentMovies.await()
+                val recentTvResult       = recentTv.await()
+                val popularMoviesResult  = popularMovies.await()
+                val trendingTvResult     = trendingTv.await()
+                val upcomingMoviesResult = upcomingMovies.await()
 
-            // If every row failed, surface an error rather than showing five silent
-            // empty rows. Partial failures still degrade gracefully to empty rows.
-            val allResults = listOf(
-                recentMoviesResult, recentTvResult, popularMoviesResult,
-                trendingTvResult, upcomingMoviesResult
-            )
-            val allFailed = allResults.all { it.isFailure }
+                // If every row failed, surface an error rather than showing five silent
+                // empty rows. Partial failures still degrade gracefully to empty rows.
+                val allResults = listOf(
+                    recentMoviesResult, recentTvResult, popularMoviesResult,
+                    trendingTvResult, upcomingMoviesResult
+                )
+                val allFailed = allResults.all { it.isFailure }
 
-            _uiState.value = _uiState.value.copy(
-                recentMovies   = recentMoviesResult.getOrDefault(emptyList()),
-                recentTv       = recentTvResult.getOrDefault(emptyList()),
-                popularMovies  = popularMoviesResult.getOrDefault(emptyList()),
-                trendingTv     = trendingTvResult.getOrDefault(emptyList()),
-                upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()),
-                error          = if (allFailed) {
-                    allResults.firstNotNullOfOrNull { it.exceptionOrNull()?.message }
-                        ?: "Failed to load content. Check your connection and server URL."
-                } else null,
-                isLoading      = false
-            )
+                _uiState.value = _uiState.value.copy(
+                    recentMovies   = recentMoviesResult.getOrDefault(emptyList()),
+                    recentTv       = recentTvResult.getOrDefault(emptyList()),
+                    popularMovies  = popularMoviesResult.getOrDefault(emptyList()),
+                    trendingTv     = trendingTvResult.getOrDefault(emptyList()),
+                    upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()),
+                    error          = if (allFailed) {
+                        allResults.firstNotNullOfOrNull { it.exceptionOrNull()?.message }
+                            ?: "Failed to load content. Check your connection and server URL."
+                    } else null
+                )
+            } finally {
+                // Guarantee the spinner clears even if the load is cancelled mid-flight
+                // (e.g. an await() interrupted before the state write above), which would
+                // otherwise leave a permanent loading spinner.
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 
