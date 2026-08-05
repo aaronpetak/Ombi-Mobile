@@ -1,5 +1,6 @@
 package com.ombi.mobile.di
 
+import com.ombi.mobile.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -15,6 +16,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 /**
@@ -64,26 +67,45 @@ object NetworkModule {
             val serverUrl = userPreferences.getServerUrlSync()
             val parsed = serverUrl.toHttpUrlOrNull()
             if (parsed == null) {
-                chain.proceed(chain.request())
+                // A blank or unparseable URL previously fell through to the
+                // http://localhost/ placeholder, surfacing config errors as confusing
+                // connection-refused failures. Fail loudly with an actionable message.
+                throw IOException("No Ombi server URL configured. Please set one in Settings.")
             } else {
-                val newUrl = chain.request().url.newBuilder()
+                // Prepend any path prefix from the configured URL (e.g. a reverse-proxy
+                // subpath like "/ombi") so requests route to <host>/ombi/api/... rather
+                // than dropping the prefix and 404ing at <host>/api/...
+                val prefix = parsed.encodedPath.trimEnd('/')
+                val original = chain.request().url
+                val newUrl = original.newBuilder()
                     .scheme(parsed.scheme)
                     .host(parsed.host)
                     .port(parsed.port)
+                    .encodedPath(prefix + original.encodedPath)
                     .build()
                 chain.proceed(chain.request().newBuilder().url(newUrl).build())
             }
         }
 
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-        }
-
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
+            // Guard against a stalled or unreachable server hanging the app indefinitely.
+            // OkHttp's default per-byte read timeout does not protect against a server that
+            // streams headers then stalls the body, so callTimeout bounds the whole call.
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(45, TimeUnit.SECONDS)
             .addInterceptor(dynamicUrlInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .build()
+
+        // Only log in debug builds — Level.BASIC logs request URLs (including search
+        // terms), which are readable by other apps holding READ_LOGS on older devices.
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+            )
+        }
+
+        return builder.build()
     }
 
     @Provides
