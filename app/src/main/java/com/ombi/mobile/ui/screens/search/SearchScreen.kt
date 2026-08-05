@@ -39,6 +39,11 @@ import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
+    // Memoize filtering so it runs only when the results or the filter change,
+    // not on every recomposition.
+    val filteredResults = remember(uiState.results, uiState.filter) {
+        filterResults(uiState.results, uiState.filter)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         SearchBar(
@@ -61,7 +66,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                     )
                 }
             }
-            uiState.filteredResults.isEmpty() && !uiState.isLoading -> {
+            filteredResults.isEmpty() && !uiState.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No results found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -73,7 +78,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.filteredResults, key = { "${it.mediaType}_${it.id}" }) { result ->
+                    items(filteredResults, key = { "${it.mediaType}_${it.id}" }) { result ->
                         MediaCard(
                             title = result.title,
                             posterUrl = result.poster.toTmdbUrl(),

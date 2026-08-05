@@ -1,8 +1,8 @@
 package com.ombi.mobile.ui.components
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -89,12 +89,19 @@ fun MediaCard(
     }
 }
 
-/** Labeled horizontally-scrollable row of [MediaCard]s. */
+/**
+ * Labeled horizontally-scrollable row of [MediaCard]s.
+ *
+ * Uses a [LazyRow] so only the cards near the viewport are composed and their
+ * posters loaded, rather than eagerly composing every item as the old
+ * `Row + horizontalScroll` did. [content] is a [LazyListScope] block, so call
+ * sites use `items(list) { ... }` instead of `list.forEach { ... }`.
+ */
 @Composable
 fun MediaRow(
     title: String,
     modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
+    content: LazyListScope.() -> Unit
 ) {
     Column(modifier = modifier) {
         Text(
@@ -102,12 +109,10 @@ fun MediaRow(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        Row(
+        LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             content = content
         )
     }
