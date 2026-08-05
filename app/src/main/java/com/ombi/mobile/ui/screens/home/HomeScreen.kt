@@ -1,6 +1,7 @@
 package com.ombi.mobile.ui.screens.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
@@ -60,7 +61,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.recentMovies.isNotEmpty()) {
                     MediaRow(title = "Recently Added Movies") {
-                        uiState.recentMovies.take(20).forEach { movie ->
+                        items(uiState.recentMovies.take(20), key = { it.id }) { movie ->
                             MediaCard(
                                 title = movie.title,
                                 posterUrl = movie.posterPath.toTmdbUrl(),
@@ -73,7 +74,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.recentTv.isNotEmpty()) {
                     MediaRow(title = "Recently Added TV") {
-                        uiState.recentTv.take(20).forEach { tv ->
+                        items(uiState.recentTv.take(20), key = { it.id }) { tv ->
                             MediaCard(
                                 title = tv.title,
                                 posterUrl = tv.posterPath.toTmdbUrl(),
@@ -86,7 +87,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.popularMovies.isNotEmpty()) {
                     MediaRow(title = "Popular Movies") {
-                        uiState.popularMovies.take(20).forEach { movie ->
+                        items(uiState.popularMovies.take(20), key = { it.id }) { movie ->
                             MediaCard(
                                 title = movie.title,
                                 posterUrl = movie.posterPath.toTmdbUrl(),
@@ -99,7 +100,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.trendingTv.isNotEmpty()) {
                     MediaRow(title = "Trending TV") {
-                        uiState.trendingTv.take(20).forEach { tv ->
+                        items(uiState.trendingTv.take(20), key = { it.id }) { tv ->
                             MediaCard(
                                 title = tv.title,
                                 posterUrl = tv.backdropPath.toTmdbUrl(),
@@ -112,7 +113,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
                 if (uiState.upcomingMovies.isNotEmpty()) {
                     MediaRow(title = "Upcoming Movies") {
-                        uiState.upcomingMovies.take(20).forEach { movie ->
+                        items(uiState.upcomingMovies.take(20), key = { it.id }) { movie ->
                             MediaCard(
                                 title = movie.title,
                                 posterUrl = movie.posterPath.toTmdbUrl(),
