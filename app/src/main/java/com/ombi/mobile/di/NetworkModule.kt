@@ -16,6 +16,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -66,7 +67,10 @@ object NetworkModule {
             val serverUrl = userPreferences.getServerUrlSync()
             val parsed = serverUrl.toHttpUrlOrNull()
             if (parsed == null) {
-                chain.proceed(chain.request())
+                // A blank or unparseable URL previously fell through to the
+                // http://localhost/ placeholder, surfacing config errors as confusing
+                // connection-refused failures. Fail loudly with an actionable message.
+                throw IOException("No Ombi server URL configured. Please set one in Settings.")
             } else {
                 // Prepend any path prefix from the configured URL (e.g. a reverse-proxy
                 // subpath like "/ombi") so requests route to <host>/ombi/api/... rather
