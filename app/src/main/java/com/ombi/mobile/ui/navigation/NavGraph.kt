@@ -117,13 +117,7 @@ fun OmbiNavGraph(
         }
 
         composable("main") {
-            MainScreen(
-                onLogout = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo("main") { inclusive = true }
-                    }
-                }
-            )
+            MainScreen()
         }
     }
 }

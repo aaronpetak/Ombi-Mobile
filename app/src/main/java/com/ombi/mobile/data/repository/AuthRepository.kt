@@ -55,8 +55,10 @@ class AuthRepository @Inject constructor(
     }
 
     /**
-     * Clears the stored token, ending the current session.
-     * After this call the user will be redirected to the login screen.
+     * Ends the current session on explicit sign-out. Clears the stored token
+     * and emits [SessionEvent.LOGGED_OUT] on [sessionEvents]; the navigation
+     * collector reacts by popping back to Login, which tears down the main
+     * screen and cancels any in-flight request coroutines.
      */
-    fun logout() = authManager.clearToken()
+    fun logout() = authManager.endSession(SessionEvent.LOGGED_OUT)
 }
