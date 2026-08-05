@@ -147,8 +147,11 @@ class SearchViewModel @Inject constructor(
      */
     fun requestSelected() {
         val item = _uiState.value.selectedItem ?: return
+        // Guard before launching: setting isRequesting inside the coroutine let a fast
+        // second tap pass this check and submit a duplicate request.
+        if (_uiState.value.isRequesting) return
+        _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
