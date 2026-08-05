@@ -62,8 +62,9 @@ class LoginViewModel @Inject constructor(
                 .onSuccess {
                     // Reset isLoading before navigating so that if onSuccess() throws
                     // (e.g. NavController already destroyed after a config change) the
-                    // login button is not left permanently disabled.
-                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    // login button is not left permanently disabled. Also clear the
+                    // password so it does not linger in the retained StateFlow.
+                    _uiState.value = _uiState.value.copy(isLoading = false, password = "")
                     onSuccess()
                 }
                 .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
