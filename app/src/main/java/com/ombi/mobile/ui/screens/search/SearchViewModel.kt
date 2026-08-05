@@ -19,8 +19,10 @@ enum class SearchFilter { ALL, MOVIES, TV }
 /**
  * UI state for the Search screen.
  *
- * [filteredResults] is a derived property that applies the active [filter]
- * to the raw [results] list so the screen never needs to filter manually.
+ * The screen derives the visible list from [results] and [filter] via
+ * [filterResults], memoized in the composable with `remember(results, filter)`
+ * so filtering runs only when one of those actually changes — not on every
+ * recomposition, as a computed property here would.
  *
  * [isStatusLoading] is true while the detail fetch (availability + request
  * status) is in progress after the user taps a result card. The sheet opens
@@ -36,14 +38,15 @@ data class SearchUiState(
     val isStatusLoading: Boolean                 = false,
     val isRequesting:   Boolean                  = false,
     val requestMessage: String?                  = null
-) {
-    /** Results after applying the active [filter]. */
-    val filteredResults: List<MultiSearchResult> get() = when (filter) {
+)
+
+/** Applies [filter] to [results]. Pure; call inside `remember(results, filter)`. */
+fun filterResults(results: List<MultiSearchResult>, filter: SearchFilter): List<MultiSearchResult> =
+    when (filter) {
         SearchFilter.ALL    -> results
         SearchFilter.MOVIES -> results.filter { it.isMovie }
         SearchFilter.TV     -> results.filter { it.isTv }
     }
-}
 
 /**
  * ViewModel for the Search screen.
