@@ -63,21 +63,45 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            // Fan-out: all five requests run in parallel
-            val recentMovies   = async { repository.getRecentlyAddedMovies() }
-            val recentTv       = async { repository.getRecentlyAddedTv() }
-            val popularMovies  = async { repository.getPopularMovies() }
-            val trendingTv     = async { repository.getTrendingTv() }
-            val upcomingMovies = async { repository.getUpcomingMovies() }
+            try {
+                // Fan-out: all five requests run in parallel
+                val recentMovies   = async { repository.getRecentlyAddedMovies() }
+                val recentTv       = async { repository.getRecentlyAddedTv() }
+                val popularMovies  = async { repository.getPopularMovies() }
+                val trendingTv     = async { repository.getTrendingTv() }
+                val upcomingMovies = async { repository.getUpcomingMovies() }
 
-            _uiState.value = _uiState.value.copy(
-                recentMovies   = recentMovies.await().getOrDefault(emptyList()),
-                recentTv       = recentTv.await().getOrDefault(emptyList()),
-                popularMovies  = popularMovies.await().getOrDefault(emptyList()),
-                trendingTv     = trendingTv.await().getOrDefault(emptyList()),
-                upcomingMovies = upcomingMovies.await().getOrDefault(emptyList()),
-                isLoading      = false
-            )
+                val recentMoviesResult   = recentMovies.await()
+                val recentTvResult       = recentTv.await()
+                val popularMoviesResult  = popularMovies.await()
+                val trendingTvResult     = trendingTv.await()
+                val upcomingMoviesResult = upcomingMovies.await()
+
+                // If every row failed, surface an error rather than showing five silent
+                // empty rows. Partial failures still degrade gracefully to empty rows.
+                val allResults = listOf(
+                    recentMoviesResult, recentTvResult, popularMoviesResult,
+                    trendingTvResult, upcomingMoviesResult
+                )
+                val allFailed = allResults.all { it.isFailure }
+
+                _uiState.value = _uiState.value.copy(
+                    recentMovies   = recentMoviesResult.getOrDefault(emptyList()),
+                    recentTv       = recentTvResult.getOrDefault(emptyList()),
+                    popularMovies  = popularMoviesResult.getOrDefault(emptyList()),
+                    trendingTv     = trendingTvResult.getOrDefault(emptyList()),
+                    upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()),
+                    error          = if (allFailed) {
+                        allResults.firstNotNullOfOrNull { it.exceptionOrNull()?.message }
+                            ?: "Failed to load content. Check your connection and server URL."
+                    } else null
+                )
+            } finally {
+                // Guarantee the spinner clears even if the load is cancelled mid-flight
+                // (e.g. an await() interrupted before the state write above), which would
+                // otherwise leave a permanent loading spinner.
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 
@@ -99,8 +123,11 @@ class HomeViewModel @Inject constructor(
      */
     fun requestSelected() {
         val item = _uiState.value.selectedItem ?: return
+        // Guard before launching: setting isRequesting inside the coroutine let a fast
+        // second tap pass this check and submit a duplicate request.
+        if (_uiState.value.isRequesting) return
+        _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {

@@ -116,8 +116,9 @@ class SearchViewModel @Inject constructor(
      * Fetches full item details (availability, request status) from the Ombi
      * detail endpoint and updates [SearchUiState.selectedItem].
      *
-     * If the user dismisses the sheet before the fetch completes the update is
-     * dropped (guarded by the null check on [SearchUiState.selectedItem]).
+     * If the user dismisses the sheet or opens a different item before the fetch
+     * completes, the update is dropped (guarded by an identity check on
+     * [SearchUiState.selectedItem]).
      */
     private suspend fun fetchItemStatus(item: MediaItem) {
         val enriched = if (item.isMovie) {
@@ -131,8 +132,14 @@ class SearchViewModel @Inject constructor(
                     ?.let { if (it.theMovieDbId == null) it.copy(theMovieDbId = tmdbId) else it }
             }
         }
-        // Only update if the user hasn't already dismissed the sheet
-        if (_uiState.value.selectedItem != null) {
+        // Only apply the enrichment if the still-selected item is the same one we
+        // fetched for. A slow fetch for item A must not overwrite item B after the
+        // user has switched selection.
+        val current = _uiState.value.selectedItem
+        if (current != null &&
+            current.theMovieDbId == item.theMovieDbId &&
+            current.isMovie == item.isMovie
+        ) {
             _uiState.value = _uiState.value.copy(
                 selectedItem    = enriched ?: item,
                 isStatusLoading = false
@@ -147,8 +154,11 @@ class SearchViewModel @Inject constructor(
      */
     fun requestSelected() {
         val item = _uiState.value.selectedItem ?: return
+        // Guard before launching: setting isRequesting inside the coroutine let a fast
+        // second tap pass this check and submit a duplicate request.
+        if (_uiState.value.isRequesting) return
+        _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRequesting = true, requestMessage = null)
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
