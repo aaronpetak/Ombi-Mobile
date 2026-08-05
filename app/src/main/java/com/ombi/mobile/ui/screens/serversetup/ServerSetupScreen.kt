@@ -3,6 +3,8 @@ package com.ombi.mobile.ui.screens.serversetup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +64,13 @@ fun ServerSetupScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        // Warn when the URL uses cleartext HTTP. Traffic (including the login
+        // token) would travel unencrypted; https:// is strongly preferred.
+        if (uiState.url.trim().startsWith("http://", ignoreCase = true)) {
+            Spacer(Modifier.height(16.dp))
+            CleartextWarning()
+        }
+
         Spacer(Modifier.height(24.dp))
 
         Button(
@@ -74,6 +83,35 @@ fun ServerSetupScreen(
             } else {
                 Text("Connect")
             }
+        }
+    }
+}
+
+/**
+ * A warning card shown when the entered server URL uses cleartext `http://`.
+ * Advises the user that their connection — including the login token — would
+ * be unencrypted.
+ */
+@Composable
+private fun CleartextWarning() {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Warning, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                "This connection is not encrypted. Your login and data will be " +
+                    "sent in cleartext. Use https:// if your server supports it.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
