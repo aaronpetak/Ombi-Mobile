@@ -24,6 +24,9 @@ sealed class Screen(val route: String) {
     object ServerSetup : Screen("server_setup")
     object Login       : Screen("login")
 
+    // Post-login shell hosting the bottom-nav destinations below.
+    object Main        : Screen("main")
+
     // Main app (bottom nav)
     object Home      : Screen("home")
     object Search    : Screen("search")
