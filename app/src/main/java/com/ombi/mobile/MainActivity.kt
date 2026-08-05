@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 else    -> isSystemInDarkTheme() // "system" — follow the OS setting
             }
             OmbiTheme(darkTheme = darkTheme) {
-                OmbiNavGraph()
+                OmbiNavGraph(userPreferences = userPreferences)
             }
         }
     }

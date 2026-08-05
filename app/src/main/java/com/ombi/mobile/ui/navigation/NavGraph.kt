@@ -11,7 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,7 +41,7 @@ import com.ombi.mobile.ui.screens.serversetup.ServerSetupScreen
  * previous auth screen.
  */
 @Composable
-fun OmbiNavGraph(userPreferences: UserPreferences = hiltViewModel<NavViewModel>().userPreferences) {
+fun OmbiNavGraph(userPreferences: UserPreferences) {
     val navController = rememberNavController()
 
     // Read the saved server URL reactively; null = not yet loaded.
