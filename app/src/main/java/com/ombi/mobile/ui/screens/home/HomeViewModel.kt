@@ -11,11 +11,16 @@ import com.ombi.mobile.data.repository.OmbiRepository
 import com.ombi.mobile.ui.model.MediaItem
 import com.ombi.mobile.ui.model.toRequestOutcome
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/** Max items per row — bounds the per-item enrichment lookups on the recently-added rows. */
+private const val HOME_ROW_LIMIT = 20
 
 /**
  * UI state for the Home screen.
@@ -90,9 +95,21 @@ class HomeViewModel @Inject constructor(
                 // TMDB id more than once, and the LazyRows key on it.id — duplicate
                 // keys crash Compose ("Key … was already used"). distinctBy keeps the
                 // first occurrence, using the exact id the row keys rely on.
+                //
+                // The recentlyadded endpoints don't include posterPath or overview
+                // (Ombi's own web client fills these in client-side), so enrich each
+                // item via the TMDB detail endpoint it already carries theMovieDbId for.
+                // Items whose lookup fails are kept as-is (title only, no poster).
+                val recentMoviesEnriched = enrichRecentMovies(
+                    recentMoviesResult.getOrDefault(emptyList()).distinctBy { it.id }.take(HOME_ROW_LIMIT)
+                )
+                val recentTvEnriched = enrichRecentTv(
+                    recentTvResult.getOrDefault(emptyList()).distinctBy { it.id }.take(HOME_ROW_LIMIT)
+                )
+
                 _uiState.value = _uiState.value.copy(
-                    recentMovies   = recentMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
-                    recentTv       = recentTvResult.getOrDefault(emptyList()).distinctBy { it.id },
+                    recentMovies   = recentMoviesEnriched,
+                    recentTv       = recentTvEnriched,
                     popularMovies  = popularMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
                     trendingTv     = trendingTvResult.getOrDefault(emptyList()).distinctBy { it.id },
                     upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
@@ -109,6 +126,45 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Enriches recently-added movies with poster and overview via the TMDB detail
+     * endpoint. The recentlyadded response carries neither field, but every item
+     * has a [RecentlyAddedMovie.theMovieDbId] we can look up. Lookups run in
+     * parallel; an item with no id or a failed lookup is returned unchanged.
+     */
+    private suspend fun enrichRecentMovies(items: List<RecentlyAddedMovie>): List<RecentlyAddedMovie> =
+        coroutineScope {
+            items.map { movie ->
+                async {
+                    val tmdbId = movie.theMovieDbId ?: return@async movie
+                    val detail = repository.getMovieByMovieDbId(tmdbId).getOrNull() ?: return@async movie
+                    movie.copy(
+                        posterPath = movie.posterPath ?: detail.posterPath,
+                        overview   = movie.overview ?: detail.overview
+                    )
+                }
+            }.awaitAll()
+        }
+
+    /**
+     * Enriches recently-added TV shows with poster and overview via the TMDB detail
+     * endpoint. See [enrichRecentMovies]; the TV detail response exposes the portrait
+     * poster via `posterPath` or, on the per-item endpoint, `images.original`.
+     */
+    private suspend fun enrichRecentTv(items: List<RecentlyAddedTv>): List<RecentlyAddedTv> =
+        coroutineScope {
+            items.map { tv ->
+                async {
+                    val tmdbId = tv.theMovieDbId ?: return@async tv
+                    val detail = repository.getTvByMovieDbId(tmdbId).getOrNull() ?: return@async tv
+                    tv.copy(
+                        posterPath = tv.posterPath ?: detail.posterPath ?: detail.images?.original,
+                        overview   = tv.overview ?: detail.overview
+                    )
+                }
+            }.awaitAll()
+        }
 
     /**
      * Opens or closes the detail bottom sheet for [item].
