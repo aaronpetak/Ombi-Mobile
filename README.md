@@ -117,7 +117,7 @@ Select a target in the device picker and press **Run ▶**. On first launch:
 ./gradlew :app:assembleRelease
 
 # Run unit tests
-./gradlew :app:test
+./gradlew :app:testDebugUnitTest
 
 # Run lint
 ./gradlew :app:lint
@@ -183,11 +183,11 @@ Composable Screen ──▶ ViewModel (StateFlow<UiState>)
 | Language | Kotlin |
 | UI | Jetpack Compose + Material 3 |
 | Navigation | Compose Navigation |
-| Networking | Retrofit 2 + OkHttp 4 + Moshi |
+| Networking | Retrofit 2 + OkHttp 5 + Moshi |
 | Image loading | Coil |
 | Dependency injection | Hilt (Dagger) |
 | Auth token storage | EncryptedSharedPreferences (Android Keystore) |
-| User preferences | Jetpack DataStore (Proto) |
+| User preferences | Jetpack DataStore (Preferences) |
 | Async / concurrency | Kotlin Coroutines + Flow |
 | Build system | Gradle (Kotlin DSL) |
 
@@ -206,6 +206,7 @@ app/src/main/java/com/ombi/mobile/
 │   │   └── models/             # Moshi-annotated API request/response models
 │   │       ├── AuthModels.kt
 │   │       ├── RequestModels.kt
+│   │       ├── RequestStatus.kt  # Derived request-status enum
 │   │       ├── SearchModels.kt
 │   │       ├── RecentlyAddedModels.kt
 │   │       └── UserModels.kt
@@ -224,12 +225,12 @@ app/src/main/java/com/ombi/mobile/
     ├── components/
     │   └── MediaCard.kt        # Reusable poster card + horizontal row
     ├── model/
-    │   └── MediaItem.kt        # Unified UI model for movies and TV shows
+    │   ├── MediaItem.kt        # Unified UI model for movies and TV shows
+    │   └── RequestOutcome.kt   # Shared request-result → UI message mapping
     ├── navigation/
     │   ├── Screen.kt           # Sealed class of routes + BottomNavItem enum
-    │   ├── NavGraph.kt         # Root nav graph (ServerSetup → Login → Main)
-    │   ├── MainScreen.kt       # Bottom-nav shell with 4 tabs
-    │   └── NavViewModel.kt     # Minimal VM to inject UserPreferences into NavGraph
+    │   ├── NavGraph.kt         # Root nav graph (Loading → ServerSetup → Login → Main)
+    │   └── MainScreen.kt       # Bottom-nav shell with 4 tabs
     ├── screens/
     │   ├── home/               # HomeScreen + HomeViewModel
     │   ├── search/             # SearchScreen + SearchViewModel
@@ -266,10 +267,9 @@ Ombi Mobile uses the **Ombi V1 and V2 REST APIs**. No API key is required — al
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/api/v2/search/multi/{term}` | Search movies and TV simultaneously |
+| POST | `/api/v2/search/multi/{term}` | Search movies and TV simultaneously (JSON body selects movies/tv/music/people) |
 | GET | `/api/v2/search/movie/{theMovieDbId}` | Movie detail with request status |
-| GET | `/api/v2/search/Tv/moviedb/{theMovieDbId}` | TV detail by TMDB ID |
-| GET | `/api/v2/search/tv/{tvDbId}` | TV detail by TVDb ID |
+| GET | `/api/v2/search/tv/moviedb/{theMovieDbId}` | TV detail by TMDB ID |
 
 ### Discover
 
@@ -293,6 +293,8 @@ Ombi Mobile uses the **Ombi V1 and V2 REST APIs**. No API key is required — al
 | DELETE | `/api/v1/request/tv/{parentRequestId}` | Cancel a TV request (uses **parent** ID) |
 
 > **Note on TV deletion**: The DELETE endpoint expects the *parent* request ID (the top-level show), not the child/season ID. The app resolves this automatically from `parentRequest.id`.
+
+> **Note on TV IDs**: Every TV search/discover/recently-added response exposes a **TheMovieDb ID** (directly, or via the record's `id` field), which is the ID the V2 TV request endpoint requires. No TVDb-to-TMDB resolution step is needed.
 
 ---
 
