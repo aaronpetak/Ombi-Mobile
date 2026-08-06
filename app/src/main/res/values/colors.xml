@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ombi brand orange (from Ombi's site.webmanifest theme_color). -->
+    <color name="ombi_orange">#DF691A</color>
+    <!-- Adaptive-icon background layer. -->
+    <color name="ic_launcher_background">#DF691A</color>
+</resources>
