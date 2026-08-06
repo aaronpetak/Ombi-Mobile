@@ -47,7 +47,7 @@ interface OmbiApiService {
     suspend fun getMovieByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchMovieViewModel>
 
     /** Look up a TV show by its TheMovieDb ID (includes available/requested/approved status). */
-    @GET("api/v2/search/Tv/moviedb/{theMovieDbId}")
+    @GET("api/v2/search/tv/moviedb/{theMovieDbId}")
     suspend fun getTvByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchTvShowViewModel>
 
     /** Look up a TV show by its TVDb ID (returns theMovieDbId needed for V2 requests). */
@@ -93,8 +93,9 @@ interface OmbiApiService {
     suspend fun getMovieRequests(
         @Path("count") count: Int,
         @Path("position") position: Int,
-        @Path("sort") sort: String = "requesteddate",
-        @Path("sortOrder") sortOrder: Int = 1
+        // Retrofit ignores default values on @Path params — callers must pass these.
+        @Path("sort") sort: String,
+        @Path("sortOrder") sortOrder: Int
     ): Response<RequestsViewModel<MovieRequest>>
 
     @DELETE("api/v1/request/movie/{requestId}")
@@ -109,8 +110,9 @@ interface OmbiApiService {
     suspend fun getTvRequests(
         @Path("count") count: Int,
         @Path("position") position: Int,
-        @Path("sort") sort: String = "requesteddate",
-        @Path("sortOrder") sortOrder: Int = 1
+        // Retrofit ignores default values on @Path params — callers must pass these.
+        @Path("sort") sort: String,
+        @Path("sortOrder") sortOrder: Int
     ): Response<RequestsViewModel<TvRequest>>
 
     @DELETE("api/v1/request/tv/{requestId}")

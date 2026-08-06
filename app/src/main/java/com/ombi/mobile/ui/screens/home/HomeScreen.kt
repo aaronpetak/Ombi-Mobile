@@ -103,7 +103,9 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                         items(uiState.trendingTv.take(20), key = { it.id }) { tv ->
                             MediaCard(
                                 title = tv.title,
-                                posterUrl = tv.backdropPath.toTmdbUrl(),
+                                // Prefer the portrait poster; fall back to the landscape
+                                // backdrop only if the list response omits it.
+                                posterUrl = (tv.posterPath ?: tv.backdropPath).toTmdbUrl(),
                                 onClick = { viewModel.selectItem(tv.toMediaItem()) }
                             )
                         }

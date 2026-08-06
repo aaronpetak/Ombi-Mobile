@@ -5,6 +5,7 @@ import com.ombi.mobile.data.api.models.RecentlyAddedMovie
 import com.ombi.mobile.data.api.models.RecentlyAddedTv
 import com.ombi.mobile.data.api.models.SearchMovieViewModel
 import com.ombi.mobile.data.api.models.SearchTvShowViewModel
+import com.ombi.mobile.data.api.models.TvImages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -87,7 +88,9 @@ class MediaItemMapperTest {
         theMovieDbId: Int? = 1399,
         title: String? = "Game of Thrones",
         firstAired: String? = "2011-04-17",
+        posterPath: String? = "/tv-poster.jpg",
         backdropPath: String? = "/tv-backdrop.jpg",
+        images: TvImages? = null,
         rating: Double? = 9.3
     ) = SearchTvShowViewModel(
         id = id,
@@ -95,7 +98,9 @@ class MediaItemMapperTest {
         title = title,
         firstAired = firstAired,
         banner = "/banner.jpg",
+        posterPath = posterPath,
         backdropPath = backdropPath,
+        images = images,
         rating = rating,
         overview = "overview",
         available = false,
@@ -107,8 +112,25 @@ class MediaItemMapperTest {
     )
 
     @Test
-    fun `tv poster comes from backdropPath`() {
-        assertEquals("/tv-backdrop.jpg", tv(backdropPath = "/tv-backdrop.jpg").toMediaItem().posterPath)
+    fun `tv poster prefers portrait posterPath over backdrop`() {
+        val item = tv(posterPath = "/tv-poster.jpg", backdropPath = "/tv-backdrop.jpg").toMediaItem()
+        assertEquals("/tv-poster.jpg", item.posterPath)
+    }
+
+    @Test
+    fun `tv poster falls back to images original when posterPath absent`() {
+        val item = tv(
+            posterPath = null,
+            backdropPath = "/tv-backdrop.jpg",
+            images = TvImages(original = "/img-original.jpg", medium = null)
+        ).toMediaItem()
+        assertEquals("/img-original.jpg", item.posterPath)
+    }
+
+    @Test
+    fun `tv poster falls back to backdrop when posterPath and images absent`() {
+        val item = tv(posterPath = null, backdropPath = "/tv-backdrop.jpg", images = null).toMediaItem()
+        assertEquals("/tv-backdrop.jpg", item.posterPath)
     }
 
     @Test

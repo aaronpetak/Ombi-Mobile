@@ -84,7 +84,7 @@ Single-activity. Two-level navigation:
 | --- | --- |
 | Login | `POST /api/v1/token` |
 | Current user | `GET /api/v1/identity` |
-| Multi-search | `GET /api/v2/search/multi/{term}` |
+| Multi-search | `POST /api/v2/search/multi/{term}` (JSON body selects movies/tv/music/people) |
 | Popular/Upcoming/Trending | `GET /api/v2/search/movie\|tv/{category}/{pos}/{count}` |
 | Recently added | `GET /api/v1/recentlyadded/movies` + `/tv` |
 | Request movie | `POST /api/v1/request/movie` |

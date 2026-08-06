@@ -105,7 +105,7 @@ class OmbiRepository @Inject constructor(
      * Results are sorted by request date descending.
      */
     suspend fun getMovieRequests(count: Int = 30, position: Int = 0): Result<RequestsViewModel<MovieRequest>> = runCatching {
-        api.getMovieRequests(count, position).requireBody()
+        api.getMovieRequests(count, position, sort = "requesteddate", sortOrder = 1).requireBody()
     }
 
     /**
@@ -139,7 +139,7 @@ class OmbiRepository @Inject constructor(
      * nested [TvRequest.parentRequest] object.
      */
     suspend fun getTvRequests(count: Int = 30, position: Int = 0): Result<RequestsViewModel<TvRequest>> = runCatching {
-        api.getTvRequests(count, position).requireBody()
+        api.getTvRequests(count, position, sort = "requesteddate", sortOrder = 1).requireBody()
     }
 
     /**

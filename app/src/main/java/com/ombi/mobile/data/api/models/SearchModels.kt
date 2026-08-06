@@ -72,7 +72,12 @@ data class SearchTvShowViewModel(
     @Json(name = "title") val title: String?,
     @Json(name = "firstAired") val firstAired: String?,
     @Json(name = "banner") val banner: String?,
+    // Portrait poster. Present on the list/discover endpoints (popular, trending);
+    // absent on the per-item moviedb detail endpoint, which instead exposes the
+    // poster via [images].original. See [toMediaItem] for the fallback order.
+    @Json(name = "posterPath") val posterPath: String?,
     @Json(name = "backdropPath") val backdropPath: String?,
+    @Json(name = "images") val images: TvImages?,
     @Json(name = "rating") val rating: Double?,
     @Json(name = "overview") val overview: String?,
     @Json(name = "available") val available: Boolean = false,
@@ -81,6 +86,17 @@ data class SearchTvShowViewModel(
     @Json(name = "plexUrl") val plexUrl: String?,
     @Json(name = "quality") val quality: String?,
     @Json(name = "seasonRequests") val seasonRequests: List<SeasonViewModel>?
+)
+
+/**
+ * Poster imagery block returned by the TV detail endpoint
+ * (GET /api/v2/search/tv/moviedb/{id}), where the top-level `posterPath` is
+ * absent. [original] is the full-resolution portrait poster path.
+ */
+@JsonClass(generateAdapter = true)
+data class TvImages(
+    @Json(name = "original") val original: String?,
+    @Json(name = "medium")   val medium: String?
 )
 
 @JsonClass(generateAdapter = true)
