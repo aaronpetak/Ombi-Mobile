@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ombi.mobile.ui.components.MediaCard
+import com.ombi.mobile.ui.components.toDisplayLabel
 import com.ombi.mobile.ui.components.toTmdbUrl
 import com.ombi.mobile.ui.model.toMediaItem
 import com.ombi.mobile.ui.screens.detail.MediaDetailSheet
@@ -147,7 +148,7 @@ private fun FilterRow(selected: SearchFilter, onSelect: (SearchFilter) -> Unit) 
             FilterChip(
                 selected = selected == filter,
                 onClick = { onSelect(filter) },
-                label = { Text(filter.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                label = { Text(filter.toDisplayLabel()) }
             )
         }
     }
