@@ -49,15 +49,6 @@ class OmbiRepository @Inject constructor(
         api.getTvByMovieDbId(tmdbId).requireBody()
     }
 
-    /**
-     * Resolves a TV show by its TVDb ID and returns the full details including
-     * the TMDB ID. Used as a fallback for discover/recently-added items that
-     * only carry a TVDb ID — the TMDB ID is required for V2 TV requests.
-     */
-    suspend fun getTvByTvDbId(tvDbId: Int): Result<SearchTvShowViewModel> = runCatching {
-        api.getTvByTvDbId(tvDbId).requireBody()
-    }
-
     // ── Discover ──────────────────────────────────────────────────────────────
 
     /** Fetches the current page of popular movies from the Ombi discover endpoint. */
@@ -123,8 +114,8 @@ class OmbiRepository @Inject constructor(
      * Submits a new TV show request via the Ombi V2 request engine.
      *
      * Defaults to requesting all seasons ([requestAll] = true). The Ombi V2
-     * endpoint requires [theMovieDbId] — NOT the TVDb ID. If only a TVDb ID is
-     * available, resolve it first with [getTvByTvDbId].
+     * endpoint requires [theMovieDbId] — NOT the TVDb ID. Every TV source endpoint
+     * (search, discover, recently-added) supplies the TMDB ID, so no lookup is needed.
      *
      * @param theMovieDbId The TMDB ID of the TV show to request.
      * @param requestAll   When true, all seasons and episodes are requested.

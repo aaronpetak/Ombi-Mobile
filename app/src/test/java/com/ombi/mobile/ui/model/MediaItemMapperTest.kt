@@ -84,8 +84,9 @@ class MediaItemMapperTest {
     // ── SearchTvShowViewModel ───────────────────────────────────────────────
 
     private fun tv(
-        id: Int = 200,
+        id: Int = 1399,
         theMovieDbId: Int? = 1399,
+        theTvDbId: Int? = 121361,
         title: String? = "Game of Thrones",
         firstAired: String? = "2011-04-17",
         posterPath: String? = "/tv-poster.jpg",
@@ -95,6 +96,7 @@ class MediaItemMapperTest {
     ) = SearchTvShowViewModel(
         id = id,
         theMovieDbId = theMovieDbId,
+        theTvDbId = theTvDbId,
         title = title,
         firstAired = firstAired,
         banner = "/banner.jpg",
@@ -134,16 +136,24 @@ class MediaItemMapperTest {
     }
 
     @Test
-    fun `tv maps id to tvDbId and theMovieDbId separately`() {
-        val item = tv(id = 200, theMovieDbId = 1399).toMediaItem()
-        assertEquals(200, item.tvDbId)
+    fun `tv prefers explicit theMovieDbId and maps theTvDbId to tvDbId`() {
+        val item = tv(id = 1399, theMovieDbId = 1399, theTvDbId = 121361).toMediaItem()
         assertEquals(1399, item.theMovieDbId)
+        assertEquals(121361, item.tvDbId)
         assertFalse(item.isMovie)
     }
 
     @Test
-    fun `tv preserves null theMovieDbId`() {
-        assertNull(tv(theMovieDbId = null).toMediaItem().theMovieDbId)
+    fun `tv falls back to id for theMovieDbId when the field is null`() {
+        // Discover/list endpoints often return theMovieDbId=null but always carry the
+        // TMDB ID in `id`, so the request path must still resolve a TMDB ID.
+        val item = tv(id = 289324, theMovieDbId = null).toMediaItem()
+        assertEquals(289324, item.theMovieDbId)
+    }
+
+    @Test
+    fun `tv leaves tvDbId null when theTvDbId is absent`() {
+        assertNull(tv(theTvDbId = null).toMediaItem().tvDbId)
     }
 
     @Test
@@ -205,15 +215,17 @@ class MediaItemMapperTest {
     }
 
     @Test
-    fun `recentlyAddedTv is available with tvDbId only`() {
+    fun `recentlyAddedTv carries both theMovieDbId and tvDbId`() {
+        // The recentlyadded/tv endpoint returns both IDs, so the TMDB ID is available
+        // directly for requests — no secondary lookup needed.
         val item = RecentlyAddedTv(
-            id = 1, tvDbId = 121361, title = "Show",
+            id = 1, theMovieDbId = 60059, tvDbId = 273181, title = "Show",
             posterPath = "/rt.jpg", overview = null, addedAt = null
         ).toMediaItem()
         assertTrue(item.available)
         assertFalse(item.isMovie)
-        assertEquals(121361, item.tvDbId)
-        assertNull(item.theMovieDbId)
+        assertEquals(60059, item.theMovieDbId)
+        assertEquals(273181, item.tvDbId)
     }
 
     @Test
