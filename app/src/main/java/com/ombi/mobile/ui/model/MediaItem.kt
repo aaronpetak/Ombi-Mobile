@@ -58,13 +58,18 @@ fun SearchMovieViewModel.toMediaItem() = MediaItem(
  * Maps a [SearchTvShowViewModel] (returned by search and discover endpoints)
  * to a [MediaItem].
  *
- * Note: [SearchTvShowViewModel.backdropPath] is used as the poster because
- * the TV search response uses that field for the show image rather than
- * a dedicated posterPath.
+ * Poster source order (verified against a live Ombi V2 server):
+ * - List/discover endpoints (popular, trending) return a real portrait
+ *   [SearchTvShowViewModel.posterPath].
+ * - The per-item moviedb detail endpoint omits `posterPath` and instead
+ *   exposes the portrait poster via `images.original`.
+ * - `backdropPath` (landscape) is the last-resort fallback.
+ * Previously this always used the landscape `backdropPath`, so TV cards
+ * showed wide backdrops where every other card shows a portrait poster.
  */
 fun SearchTvShowViewModel.toMediaItem() = MediaItem(
     title        = title ?: "",
-    posterPath   = backdropPath,
+    posterPath   = posterPath ?: images?.original ?: backdropPath,
     overview     = overview,
     year         = firstAired?.take(4),
     rating       = rating,
