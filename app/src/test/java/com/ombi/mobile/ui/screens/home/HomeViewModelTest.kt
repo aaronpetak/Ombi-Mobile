@@ -2,6 +2,7 @@ package com.ombi.mobile.ui.screens.home
 
 import com.ombi.mobile.data.api.models.RecentlyAddedMovie
 import com.ombi.mobile.data.api.models.RequestEngineResult
+import com.ombi.mobile.data.api.models.SearchMovieViewModel
 import com.ombi.mobile.data.repository.OmbiRepository
 import com.ombi.mobile.ui.model.MediaItem
 import io.mockk.coEvery
@@ -44,6 +45,10 @@ class HomeViewModelTest {
         coEvery { getPopularMovies() } returns Result.success(emptyList())
         coEvery { getTrendingTv() } returns Result.success(emptyList())
         coEvery { getUpcomingMovies() } returns Result.success(emptyList())
+        // Recently-added items are enriched via these detail lookups; default them to
+        // failure so tests that don't care about enrichment keep the item unchanged.
+        coEvery { getMovieByMovieDbId(any()) } returns Result.failure(RuntimeException("no detail"))
+        coEvery { getTvByMovieDbId(any()) } returns Result.failure(RuntimeException("no detail"))
     }
 
     @Test
@@ -92,6 +97,53 @@ class HomeViewModelTest {
 
         val ids = vm.uiState.value.recentMovies.map { it.id }
         assertEquals(listOf(610909, 42), ids)
+    }
+
+    @Test
+    fun `recently-added movies are enriched with poster and overview from detail lookup`() = runTest(dispatcher) {
+        // The recentlyadded endpoint returns no posterPath/overview; enrichment pulls
+        // them from the TMDB detail endpoint keyed on theMovieDbId.
+        val repo = successRepo()
+        coEvery { repo.getRecentlyAddedMovies() } returns Result.success(
+            listOf(RecentlyAddedMovie(
+                id = 1, theMovieDbId = 603, imdbId = null, title = "The Matrix",
+                posterPath = null, overview = null, addedAt = null
+            ))
+        )
+        coEvery { repo.getMovieByMovieDbId(603) } returns Result.success(
+            SearchMovieViewModel(
+                id = 603, title = "The Matrix", releaseDate = "1999-03-31",
+                posterPath = "/matrix.jpg", backdropPath = null, voteAverage = 8.7,
+                overview = "A hacker learns the truth.", imdbId = null,
+                available = false, requested = false, approved = false,
+                plexUrl = null, quality = null
+            )
+        )
+
+        val vm = HomeViewModel(repo)
+        advanceUntilIdle()
+
+        val movie = vm.uiState.value.recentMovies.single()
+        assertEquals("/matrix.jpg", movie.posterPath)
+        assertEquals("A hacker learns the truth.", movie.overview)
+    }
+
+    @Test
+    fun `recently-added movie with a failed lookup is kept unchanged`() = runTest(dispatcher) {
+        val repo = successRepo() // detail lookups default to failure
+        coEvery { repo.getRecentlyAddedMovies() } returns Result.success(
+            listOf(RecentlyAddedMovie(
+                id = 1, theMovieDbId = 999, imdbId = null, title = "Obscure",
+                posterPath = null, overview = null, addedAt = null
+            ))
+        )
+
+        val vm = HomeViewModel(repo)
+        advanceUntilIdle()
+
+        val movie = vm.uiState.value.recentMovies.single()
+        assertEquals("Obscure", movie.title)
+        assertEquals(null, movie.posterPath)
     }
 
     @Test
