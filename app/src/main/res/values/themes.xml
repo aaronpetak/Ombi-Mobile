@@ -2,4 +2,14 @@
 <resources>
     <!-- Base theme required by the manifest. Compose handles all theming at runtime. -->
     <style name="Theme.OmbiMobile" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+
+    <!-- Launch theme: shows the Ombi logo on the brand-orange background while the
+         process starts, then hands off to Theme.OmbiMobile via postSplashScreenTheme.
+         Uses the AndroidX core-splashscreen backport so the same splash renders on
+         API 29+, not just Android 12+. -->
+    <style name="Theme.OmbiMobile.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ombi_orange</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.OmbiMobile</item>
+    </style>
 </resources>
