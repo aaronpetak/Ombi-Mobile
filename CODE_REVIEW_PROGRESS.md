@@ -66,17 +66,26 @@ per finding. Build/tests handed to CI as before (no JDK/Android SDK in the autho
   `SearchTvShowViewModel`; `toMediaItem()` and HomeScreen now prefer `posterPath` →
   `images.original` → `backdropPath`. Expanded `MediaItemMapperTest` to cover all three tiers.
 
-#### Bonus bugs surfaced by live probing (NOT fixed in PR 7 — out of scope, need own PR)
-1. **`theMovieDbId` / `rating` arrive as JSON strings**, not numbers (e.g. `"2287"`, `"7.3"`)
-   from the TV endpoints. Currently harmless because Moshi's `KotlinJsonAdapterFactory`
-   leniently coerces quoted numerics into `Int?`/`Double?`, but it's a fragile contract worth
-   an explicit adapter or `String` typing + parse.
-2. **`getTvByTvDbId` is misnamed / mis-keyed.** `GET /api/v2/search/tv/{id}` is actually
-   **TMDB-keyed** on this server — passing a real TVDb id (273181 for Better Call Saul)
-   returns a *different* show ("Piratjagt"). No `.../tv/tvdb/{id}` route exists (returns the
-   SPA HTML fallback). This breaks the recently-added-TV → request resolution path in
-   `HomeViewModel.requestSelected()` (`HomeViewModel.kt:138`), which relies on it to turn a
-   tvDbId into a theMovieDbId. Needs its own investigation + PR.
+#### Bonus bugs surfaced by live probing — **✅ FIXED** (branch `fix/tv-id-contract`)
+Both resolved after further live-server investigation on 2026-08-05, which refined the
+original premises. Two commits.
+
+1. **JSON string→number coercion** — `theMovieDbId`/`rating`/`tvDbId` arrive as JSON strings
+   (`"60059"`, `"7.3"`, `"273181"`). Investigation concluded this is **not a defect**: Moshi's
+   `JsonReader` natively coerces quoted numerics for `Int?`/`Double?` reads, and the app has
+   always shipped this (e.g. `RecentlyAddedTv.tvDbId`). Swapping in custom adapters would be
+   risky churn for zero benefit. Instead **pinned the behavior** with
+   `JsonNumberCoercionTest` (real payloads, NetworkModule-identical Moshi) so a future Moshi
+   upgrade that tightened parsing fails in CI instead of silently emptying the lists.
+2. **TV ID contract** — the premise ("`getTvByTvDbId` resolves a TVDb id") was itself broken.
+   Verified: `SearchTvShowViewModel.id` is the **TMDB id** on every TV endpoint (list items
+   with null `theMovieDbId` still carry the TMDB id in `id`); `GET /api/v2/search/tv/{id}` is
+   TMDB-keyed (a real TVDb id returns the wrong show); and `recentlyadded/tv` returns
+   `theMovieDbId` **directly**. So the resolution step was both broken and unnecessary. Fixed
+   the mapper (`theMovieDbId = theMovieDbId ?: id`, `tvDbId` from the real `theTvDbId` field),
+   added `theMovieDbId` to `RecentlyAddedTv`, and **removed** `getTvByTvDbId` + the dead
+   fallback in `HomeViewModel.requestSelected()`. (Note: the button gate `!available` already
+   made the old path unreachable for recently-added TV in practice, but the contract was wrong.)
 
 ### #23 — deferred (decided against during PR 11)
 Review wanted a shared `MediaRequestState` cluster nested into both Home + Search
