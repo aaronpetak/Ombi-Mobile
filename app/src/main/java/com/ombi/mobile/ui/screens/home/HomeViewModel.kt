@@ -86,12 +86,16 @@ class HomeViewModel @Inject constructor(
                 )
                 val allFailed = allResults.all { it.isFailure }
 
+                // Dedupe on id: Ombi's recentlyadded endpoints can return the same
+                // TMDB id more than once, and the LazyRows key on it.id — duplicate
+                // keys crash Compose ("Key … was already used"). distinctBy keeps the
+                // first occurrence, using the exact id the row keys rely on.
                 _uiState.value = _uiState.value.copy(
-                    recentMovies   = recentMoviesResult.getOrDefault(emptyList()),
-                    recentTv       = recentTvResult.getOrDefault(emptyList()),
-                    popularMovies  = popularMoviesResult.getOrDefault(emptyList()),
-                    trendingTv     = trendingTvResult.getOrDefault(emptyList()),
-                    upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()),
+                    recentMovies   = recentMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
+                    recentTv       = recentTvResult.getOrDefault(emptyList()).distinctBy { it.id },
+                    popularMovies  = popularMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
+                    trendingTv     = trendingTvResult.getOrDefault(emptyList()).distinctBy { it.id },
+                    upcomingMovies = upcomingMoviesResult.getOrDefault(emptyList()).distinctBy { it.id },
                     error          = if (allFailed) {
                         allResults.firstNotNullOfOrNull { it.exceptionOrNull()?.message }
                             ?: "Failed to load content. Check your connection and server URL."
