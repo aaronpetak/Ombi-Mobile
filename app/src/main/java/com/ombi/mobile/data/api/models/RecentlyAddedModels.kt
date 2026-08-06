@@ -25,15 +25,17 @@ data class RecentlyAddedMovie(
  * Represents a TV show (or episode batch) that was recently added to the media server.
  *
  * Returned by GET /api/v1/recentlyadded/tv.
- * Note: recently-added TV items carry a [tvDbId] (TVDb) rather than a TMDB ID.
- * A TMDB ID lookup is required if the user taps the item to request it.
+ * Verified against a live server: this endpoint returns **both** [theMovieDbId] and
+ * [tvDbId], so no secondary lookup is needed to request the show. It does not return
+ * a [posterPath] (the field is always absent/null here).
  */
 @JsonClass(generateAdapter = true)
 data class RecentlyAddedTv(
-    @Json(name = "id")         val id: Int,
-    @Json(name = "tvDbId")     val tvDbId: Int?,
-    @Json(name = "title")      val title: String?,
-    @Json(name = "posterPath") val posterPath: String?,
-    @Json(name = "overview")   val overview: String?,
-    @Json(name = "addedAt")    val addedAt: String?
+    @Json(name = "id")           val id: Int,
+    @Json(name = "theMovieDbId") val theMovieDbId: Int?,
+    @Json(name = "tvDbId")       val tvDbId: Int?,
+    @Json(name = "title")        val title: String?,
+    @Json(name = "posterPath")   val posterPath: String?,
+    @Json(name = "overview")     val overview: String?,
+    @Json(name = "addedAt")      val addedAt: String?
 )

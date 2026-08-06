@@ -61,14 +61,20 @@ data class SearchMovieViewModel(
 )
 
 /**
- * TV show detail returned by GET /api/v2/search/Tv/moviedb/{id} and similar endpoints.
- * [theMovieDbId] is used by the V2 TV request endpoint; [id] is the TVDb ID.
+ * TV show detail returned by GET /api/v2/search/tv/moviedb/{id} and similar endpoints.
+ *
+ * [id] is the **TheMovieDb ID** (verified against a live server: e.g. Batman returns
+ * id=2287 == theMovieDbId=2287, and list items with a null [theMovieDbId] still carry
+ * their TMDB ID in [id]). The separate [theMovieDbId] field is only populated on some
+ * endpoints, so callers should treat `theMovieDbId ?: id` as the TMDB ID.
+ * The TVDb ID, when present, is in [theTvDbId].
  * [seasonRequests] is populated for per-item lookups, null for list responses.
  */
 @JsonClass(generateAdapter = true)
 data class SearchTvShowViewModel(
     @Json(name = "id") val id: Int,
     @Json(name = "theMovieDbId") val theMovieDbId: Int?,
+    @Json(name = "theTvDbId") val theTvDbId: Int?,
     @Json(name = "title") val title: String?,
     @Json(name = "firstAired") val firstAired: String?,
     @Json(name = "banner") val banner: String?,

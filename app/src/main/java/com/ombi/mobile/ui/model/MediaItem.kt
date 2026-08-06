@@ -16,9 +16,10 @@ import com.ombi.mobile.data.api.models.SearchTvShowViewModel
  *
  * ID strategy:
  * - Movies always have a [theMovieDbId]; [tvDbId] is null.
- * - TV shows may have both, one, or neither depending on the source endpoint.
- *   [theMovieDbId] is required to submit a V2 TV request; if only [tvDbId] is
- *   present, it must be resolved via [com.ombi.mobile.data.repository.OmbiRepository.getTvByTvDbId].
+ * - TV shows always have a [theMovieDbId] (every TV endpoint exposes the TMDB ID,
+ *   either directly or via the record's `id`); [tvDbId] is populated when available
+ *   but is not needed to submit a request. [theMovieDbId] is what the V2 TV request
+ *   endpoint requires.
  */
 data class MediaItem(
     val title: String,
@@ -74,8 +75,11 @@ fun SearchTvShowViewModel.toMediaItem() = MediaItem(
     year         = firstAired?.take(4),
     rating       = rating,
     isMovie      = false,
-    theMovieDbId = theMovieDbId,
-    tvDbId       = id,
+    // [id] is the TMDB ID on every TV endpoint; [theMovieDbId] is a sometimes-populated
+    // duplicate. Prefer it when present, otherwise fall back to [id]. This is the ID the
+    // V2 TV request endpoint needs.
+    theMovieDbId = theMovieDbId ?: id,
+    tvDbId       = theTvDbId,
     available    = available,
     requested    = requested,
     approved     = approved
@@ -127,8 +131,8 @@ fun RecentlyAddedMovie.toMediaItem() = MediaItem(
 
 /**
  * Maps a [RecentlyAddedTv] to a [MediaItem].
- * Recently-added TV items carry a TVDb ID only; [theMovieDbId] is null and
- * must be resolved before submitting a request.
+ * Recently-added TV items carry both a TMDB ID and a TVDb ID, so [theMovieDbId]
+ * is populated directly — no secondary lookup is needed to request the show.
  */
 fun RecentlyAddedTv.toMediaItem() = MediaItem(
     title        = title ?: "",
@@ -137,7 +141,7 @@ fun RecentlyAddedTv.toMediaItem() = MediaItem(
     year         = null,
     rating       = null,
     isMovie      = false,
-    theMovieDbId = null,
+    theMovieDbId = theMovieDbId,
     tvDbId       = tvDbId,
     available    = true,
     requested    = false,

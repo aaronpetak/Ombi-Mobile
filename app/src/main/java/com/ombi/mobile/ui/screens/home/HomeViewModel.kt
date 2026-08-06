@@ -117,10 +117,8 @@ class HomeViewModel @Inject constructor(
     /**
      * Submits a media request for the currently selected item.
      *
-     * For movies, uses the TMDB ID directly. For TV shows, [theMovieDbId] is
-     * required by the Ombi V2 endpoint — if only a TVDb ID is available
-     * (common for recently-added TV), the TMDB ID is resolved via a secondary
-     * lookup before the request is submitted.
+     * Both movie and TV requests use the TMDB ID directly — every source endpoint
+     * (search, discover, recently-added) supplies it, so no secondary lookup is needed.
      */
     fun requestSelected() {
         val item = _uiState.value.selectedItem ?: return
@@ -132,11 +130,9 @@ class HomeViewModel @Inject constructor(
             val result = if (item.isMovie) {
                 item.theMovieDbId?.let { repository.requestMovie(it) }
             } else {
-                // theMovieDbId is required for V2 TV requests; discover endpoints may only
-                // populate tvDbId, so resolve the TMDB ID via a TVDb lookup if needed
-                val tmdbId = item.theMovieDbId
-                    ?: item.tvDbId?.let { repository.getTvByTvDbId(it).getOrNull()?.theMovieDbId }
-                tmdbId?.let { repository.requestTv(it) }
+                // Every TV endpoint (search, discover, recently-added) supplies the TMDB ID
+                // that the V2 request endpoint needs, so no secondary resolution is required.
+                item.theMovieDbId?.let { repository.requestTv(it) }
             }
             // Shared message + optimistic-requested mapping (see toRequestOutcome).
             // Only rewrite selectedItem on a successful call, matching the

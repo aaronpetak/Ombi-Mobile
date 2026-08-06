@@ -50,10 +50,6 @@ interface OmbiApiService {
     @GET("api/v2/search/tv/moviedb/{theMovieDbId}")
     suspend fun getTvByMovieDbId(@Path("theMovieDbId") theMovieDbId: Int): Response<SearchTvShowViewModel>
 
-    /** Look up a TV show by its TVDb ID (returns theMovieDbId needed for V2 requests). */
-    @GET("api/v2/search/tv/{tvDbId}")
-    suspend fun getTvByTvDbId(@Path("tvDbId") tvDbId: Int): Response<SearchTvShowViewModel>
-
     // ── Discover — Movies ─────────────────────────────────────────────────────
 
     @GET("api/v2/search/movie/popular/{position}/{count}")
