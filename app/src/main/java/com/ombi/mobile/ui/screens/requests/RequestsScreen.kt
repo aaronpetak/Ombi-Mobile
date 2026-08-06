@@ -18,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ombi.mobile.data.api.models.RequestStatus
 import com.ombi.mobile.data.api.models.TvRequest
+import com.ombi.mobile.ui.components.toDisplayLabel
 import com.ombi.mobile.ui.components.toTmdbUrl
 
 /**
@@ -64,7 +65,7 @@ fun RequestsScreen(viewModel: RequestsViewModel = hiltViewModel()) {
                 Tab(
                     selected = uiState.selectedTab == tab,
                     onClick = { viewModel.onTabSelected(tab) },
-                    text = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    text = { Text(tab.toDisplayLabel()) }
                 )
             }
         }
