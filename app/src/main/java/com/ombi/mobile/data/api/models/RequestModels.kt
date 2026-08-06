@@ -30,7 +30,7 @@ data class MovieRequestBody(
 @JsonClass(generateAdapter = true)
 data class TvRequestBody(
     @Json(name = "theMovieDbId")  val theMovieDbId: Int,
-    @Json(name = "requestAll")    val requestAll: Boolean = false,
+    @Json(name = "requestAll")    val requestAll: Boolean = true,
     @Json(name = "firstSeason")   val firstSeason: Boolean = false,
     @Json(name = "latestSeason")  val latestSeason: Boolean = false,
     @Json(name = "seasons")       val seasons: List<SeasonRequestBody> = emptyList(),
