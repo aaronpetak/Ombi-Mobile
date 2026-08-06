@@ -1,5 +1,6 @@
 package com.ombi.mobile.ui.screens.home
 
+import com.ombi.mobile.data.api.models.RecentlyAddedMovie
 import com.ombi.mobile.data.api.models.RequestEngineResult
 import com.ombi.mobile.data.repository.OmbiRepository
 import com.ombi.mobile.ui.model.MediaItem
@@ -72,6 +73,25 @@ class HomeViewModelTest {
 
         assertEquals(null, vm.uiState.value.error)
         assertFalse(vm.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `duplicate ids in a row are deduped so LazyRow keys stay unique`() = runTest(dispatcher) {
+        // Ombi's recentlyadded endpoint can return the same title twice; the row keys
+        // on it.id, so a duplicate id would crash Compose ("Key … was already used").
+        val repo = successRepo()
+        fun movie(id: Int) = RecentlyAddedMovie(
+            id = id, theMovieDbId = id, imdbId = null, title = "M$id",
+            posterPath = null, overview = null, addedAt = null
+        )
+        coEvery { repo.getRecentlyAddedMovies() } returns
+            Result.success(listOf(movie(610909), movie(610909), movie(42)))
+
+        val vm = HomeViewModel(repo)
+        advanceUntilIdle()
+
+        val ids = vm.uiState.value.recentMovies.map { it.id }
+        assertEquals(listOf(610909, 42), ids)
     }
 
     @Test
